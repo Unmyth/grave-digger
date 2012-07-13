@@ -1,17 +1,13 @@
 default: lifter
 
-lifter : src/heap.fasl src/map.fasl
-	sbcl --eval '(progn (load "src/heap.fasl") (load "src/map.fasl") (sb-ext:save-lisp-and-die "lifter" :executable t :toplevel (quote main) :purify t))'
-
-src/heap.fasl: src/heap.lisp
-	sbcl --eval '(progn (compile-file "src/heap.lisp") (quit))'
-
-src/map.fasl: src/map.lisp
-	sbcl --eval '(progn (compile-file "src/map.lisp") (quit))'
+lifter:
+	sbcl --non-interactive	\
+		 --eval "(progn (load \"src/digger.system\") (asdf:operate 'asdf:compile-op :digger) \
+						(sb-ext:save-lisp-and-die \"lifter\" :executable t :toplevel (quote main) :purify t))"
 
 clean:
-	rm -f src/*.fasl
+	rm -rf lifter
 
-.PHONY: clean default
+.PHONY: lifter clean
 
 

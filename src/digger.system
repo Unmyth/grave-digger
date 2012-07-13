@@ -1,0 +1,10 @@
+(asdf::defsystem :digger
+    :components (
+                 (:file "generic-map")
+                 (:file "heap")
+                 (:file "map")
+                 (:file "main" :depends-on ("generic-map" "heap" "map"))
+                )
+  )
+
+(asdf::load-system :digger)
