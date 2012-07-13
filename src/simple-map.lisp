@@ -24,22 +24,25 @@
     (falling-rock #\@)
     (otherwise (error "wrong symbol"))))
 
-(defun map-from-string (str)
-  (let* ((lst (coerce str 'list))
-         (h (1+ (count #\NewLine str)))
-         (w (- (length lst) (length (member #\NewLine lst))))
+(defun map-from-stdio ()
+  (let* ((str-lst
+           (loop for line = (read-line *standard-input* nil nil)
+             while line
+             collect line))
+         (h (length str-lst))
+         (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
          (smap (create-simple-map w h))
          (i 0)
          (j 0))
-    (mapcar
-      (lambda (chr)
-        (if (eq chr #\NewLine)
-          (progn (setf i (1+ i)) (setf j 0))
-          (let ((sym (char-to-symbol chr)))
-            (update! smap j i sym)
-            (setf j (1+ j)))))
-      lst)
-    smap))
+    (loop for str in str-lst do
+          (setf j 0)
+          (mapcar
+            (lambda (chr)
+              (update! smap j i (char-to-symbol chr))
+              (setf j (1+ j)))
+            (coerce str 'list))
+          (setf i (1+ i)))
+    (format t "~A~%" (map-to-string smap))))
 
 (defun map-to-string (mp)
   (let ((h (map-height mp))
@@ -50,15 +53,3 @@
                (push (symbol-to-char (at-pos mp j i)) lst))
           (if (> i 0) (push #\NewLine lst)))
     (coerce lst 'string)))
-
-(defun test ()
-  (let ((a (map-from-string "######
-#. *R#
-#  \\.#
-#\\ * #
-L  .\\#
-######")))
-;     (print a)
-     (format t "~A~%" (map-to-string a))
-  ))
-

@@ -1,7 +1,7 @@
 default: lifter
 
 lifter : src/heap.fasl src/map.fasl src/simple-map.fasl
-	sbcl --eval '(progn (load "src/heap.fasl") (load "src/map.fasl") (load "src/simple-map.fasl") (sb-ext:save-lisp-and-die "lifter" :executable t #|:toplevel (quote main)|# :purify t))'
+	sbcl --eval '(progn (load "src/heap.fasl") (load "src/map.fasl") (load "src/simple-map.fasl") (sb-ext:save-lisp-and-die "lifter" :executable t :toplevel (quote map-from-stdio) :purify t))'
 
 src/heap.fasl: src/heap.lisp
 	sbcl --eval '(progn (compile-file "src/heap.lisp") (quit))'
