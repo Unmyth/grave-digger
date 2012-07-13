@@ -28,7 +28,7 @@
   (let* ((lst (coerce str 'list))
          (h (1+ (count #\NewLine str)))
          (w (- (length lst) (length (member #\NewLine lst))))
-         (smap (create-simple-map w h))
+         (smap (create-tree-map w h))
          (i 0)
          (j 0))
     (mapcar
