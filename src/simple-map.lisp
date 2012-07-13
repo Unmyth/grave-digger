@@ -12,17 +12,19 @@
     (otherwise (error "wrong character"))))
 
 (defun symbol-to-char (sym)
-  (case sym
-    (robot #\R)
-    (wall #\#)
-    (rock #\*)
-    (lambda #\\)
-    (closed-lift #\L)
-    (open-lift #\O)
-    (earth #\.)
-    (space #\Space)
-    (falling-rock #\@)
-    (otherwise (error "wrong symbol"))))
+  (if sym
+      (case sym
+        (robot #\R)
+        (wall #\#)
+        (rock #\*)
+        (lambda #\\)
+        (closed-lift #\L)
+        (open-lift #\O)
+        (earth #\.)
+        (space #\Space)
+        (falling-rock #\@)
+        (otherwise (error "wrong symbol")))
+      #\Space))
 
 (defun map-from-stdio ()
   (let* ((str-lst
