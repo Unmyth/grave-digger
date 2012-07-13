@@ -1,44 +1,46 @@
-(load "generic-map.lisp")
-;;(defstruct open-state
-;;    map
-;;    path
-;;    robot-x
-;;    robot-y)
-;;
-;;(defun search-path-to (state x y)
-;;    (let ((closed-states '())
-;;          (open-states (list (make-open-state :state state :path '()))))
-;;        ;;
-;;        (when (not (heap-empty-p open-states))
-;;            (let ((current (heap-remove open-states)))
-;;                (if (and (eq (os-robot-x current) x)
-;;                         (eq (os-robot-y current) y))
-;;                    (values (os-path current) (os-map current))
-;;                    (maps-hash-add closed-states (os-map current))
-;;                    (dolist (move (possible-moves current))
-;;                        (let ((new-state (make-open-state :state (do-move (os-map current) move)
-;;                                                          :path (cons move (os-path current))
-;;                                                          :robot-x (move-x move)
-;;                                                          :robot-y (move-y move))))
-;;                        (when (not (maps-set-contains (os-map new-state) closed-states))
-;;                            (when (heap-find-idx 
-;;                            (let ((estimated-score (+ (length (os-path new-state))
-;;                                                      (distance move (make-move x y)))))
-;;                                (
-;;                        
+(defstruct pos x y)
+(defstruct game-state (:conc-name gs-)
+    field
+    robot-pos
+    path
+    estimation)
 
-;; open set: map + path + robot pos + heurisitc estim
-;; closed set: set of maps
+(defun game-state-hash (gs)
+    (tree-map-hash (gs-field gs)))
 
-;; search process:
-;;
-;; while open-set:
-;;    cur = top estim open-set
-;;    
-;;    when cur robot-pos == target robot-pos -> return current path
-;;
-;;    add cur to closed-set
-;;    for each move in (possible-moves cur):
-;;      new-state = (do-move cur move) <- updates map, path, robot pos and estim
-;;      ;;
-;;
+(defun game-state-eq (a b)
+    (tree-map-equals a b))
+
+(defun estimate-cost (gs pos)
+    )
+
+(defun possible-moves (gs)
+    )
+
+(defun do-move (gs move) ;; move 'left 'right 'up 'down 'wait
+    )
+
+(defun search-path-to (state ;; game-state
+                       destination) ;; pos
+    (let ((closed-states     (make-generic-map #'game-state-hash #'game-state-eq))
+          (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b))))))
+          ;;(best-known-scores (make-generic-map #'game-state-hash #'game-state-eq)))
+    
+        (setf (gs-estimation state (estimate-cost state destination)))
+        (heap-insert open-states state)
+        (loop
+            ;; failure
+            (when (heap-empty-p open-states)
+                (return-from search-path-to nil))
+
+            (let ((current (heap-remove open-state)))
+                ;; check goal
+                (if (equal (gs-robot-pos current) destination)
+                    (return-from search-path-to current)
+                    (generic-map-add closed-states current))
+
+                ;; check continuations
+                (dolist (move (possible-moves current))
+                    (let ((new-state (do-move current move)))
+                        (unless (generic-map-get closed-states new-state)
+                            (heap-insert open-states new-state))))))))
