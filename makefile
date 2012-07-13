@@ -1,12 +1,10 @@
 default: lifter
 
 lifter:
-	sbcl --non-interactive	\
-		 --eval "(require 'asdf)" \
-		 --eval "(progn (load \"src/digger.system\") (asdf:operate 'asdf:compile-op :digger) \
-						(sb-ext:save-lisp-and-die \"lifter\" :executable t :toplevel (quote main) :purify t))"
+	sbcl --non-interactive	--load src/compile.lisp
 
 clean:
+	touch src/*.lisp
 	rm -rf lifter
 
 .PHONY: lifter clean
