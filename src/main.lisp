@@ -1,2 +1,2 @@
 (defun main ()
-    (format t "A"))
+    (map-from-stdio))
