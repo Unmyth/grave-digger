@@ -3,6 +3,7 @@
                  (:file "generic-map")
                  (:file "heap")
                  (:file "map")
+                 (:file "simple-map" :depends-on ("map"))
                  (:file "main" :depends-on ("generic-map" "heap" "map"))
                 )
   )
