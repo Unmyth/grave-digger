@@ -21,12 +21,12 @@
 
 (defun copy-array (arr)
   (let* ((linear-arr (make-array 
-                      (* (1+ (row-major-aref arr 0))
-                         (1+ (row-major-aref arr 1)))
+                      (* (array-dimension arr 0)
+                         (array-dimension arr 1))
                       :displaced-to arr))
          (linear-copy (copy-seq linear-arr)))
-    (make-array (list (1+ (row-major-aref arr 0))
-                      (1+ (row-major-aref arr 1)))
+    (make-array (list (array-dimension arr 0)
+                      (array-dimension arr 1))
                 :displaced-to linear-copy)))
 
 (defun copy-update-array (arr x y value)
@@ -75,20 +75,20 @@
     (falling-rock 235226509)))
 
 (defun tree-map-node-hash (node)
-  (if (symbolp node)
-      (get-symbol-hash node)
-      (if (tree-map-node-hash-value node)
-          (tree-map-node-hash-value node)
-          (let ((hash-val 0))
-            (dolist (x '(0 1))
-              (dolist (y '(0 1))
-                (setf hash-val 
-                      (+ hash-val 
-                         (tree-map-node-hash (aref (tree-map-node-subnodes node) x y))))))
-                (setf hash-val (mod hash-val +big-prime+))
-                (setf (tree-map-node-hash-value node)
-                      hash-val)
-                hash-val))))
+  (cond ((null node) 0)
+        ((symbolp node) (get-symbol-hash node))
+        ((tree-map-node-hash-value node)
+         (tree-map-node-hash-value node))
+        (t (let ((hash-val 0))
+             (dolist (x '(0 1))
+               (dolist (y '(0 1))
+                 (setf hash-val 
+                       (+ hash-val 
+                          (tree-map-node-hash (aref (tree-map-node-subnodes node) x y))))))
+             (setf hash-val (mod hash-val +big-prime+))
+             (setf (tree-map-node-hash-value node)
+                   hash-val)
+             hash-val))))
 
 (defun update-node-hash (node)
   (tree-map-node-hash node)
@@ -98,6 +98,9 @@
   (let ((node (make-tree-map-node :subnodes subnodes)))
     (tree-map-node-hash node)
     node))
+
+(defun create-2x2-array ()
+  (make-array '(2 2) :initial-element nil))
 
 (defun tree-map-walk-update (node cur-size func terminal-func x y)
   "Call (func node subnode x y) for intermediate nodes and (terminal-func node x y) for leaf node along the path.
@@ -111,7 +114,7 @@ x and y are always local to the node."
              (y-offs (- y (* middle local-y)))
              (subnode (aref (tree-map-node-subnodes node) local-x local-y)))
         (unless subnode
-          (setf subnode (make-tree-map-node :subnodes (make-array '(2 2))))
+          (setf subnode (make-tree-map-node :subnodes (create-2x2-array)))
           (setf (aref (tree-map-node-subnodes node) local-x local-y)
                 subnode))
         (funcall func 
@@ -120,8 +123,8 @@ x and y are always local to the node."
                   subnode middle
                   func terminal-func
                   x-offs y-offs)
-                 x-offs
-                 y-offs))))
+                 local-x
+                 local-y))))
 
 (defun tree-map-at (node cur-size x y)
   (tree-map-walk-update node cur-size
@@ -175,14 +178,14 @@ x and y are always local to the node."
 
 (defclass tree-map (a-map)
   ((top-node :accessor tree-map-top
-             :initarg top-node
+             :initarg :top-node
              :type tree-map-node)
    (size :accessor tree-map-size
          :initarg :size
          :type integer)))
 
 (defun create-tree-map (width height)
-  (let ((subnodes (make-array '(2 2)))
+  (let ((subnodes (create-2x2-array))
         (size (ash 2 (integer-length (max width height)))))
     (make-instance 'tree-map
                    :top-node (make-tree-map-node :subnodes subnodes)
@@ -200,7 +203,7 @@ x and y are always local to the node."
    (tree-map-node-equals (tree-map-top tree-map1)
                          (tree-map-top tree-map2))))
 
-(defmethod at-ops ((map tree-map) x y)
+(defmethod at-pos ((map tree-map) x y)
   (tree-map-at (tree-map-top map) (tree-map-size map)
                x y))
 
