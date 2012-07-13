@@ -14,7 +14,7 @@
            :initarg :height
            :type integer)))
 
-(defclass simple-map (map)
+(defclass simple-map (a-map)
   ((vector :accessor simple-map-vector
            :initarg :vector
            :type (vector t))))
