@@ -21,12 +21,12 @@
 
 (defun copy-array (arr)
   (let* ((linear-arr (make-array 
-                      (* (1+ (row-major-aref arr 0))
-                         (1+ (row-major-aref arr 1)))
+                      (* (array-dimension arr 0)
+                         (array-dimension arr 1))
                       :displaced-to arr))
          (linear-copy (copy-seq linear-arr)))
-    (make-array (list (1+ (row-major-aref arr 0))
-                      (1+ (row-major-aref arr 1)))
+    (make-array (list (array-dimension arr 0)
+                      (array-dimension arr 1))
                 :displaced-to linear-copy)))
 
 (defun copy-update-array (arr x y value)
@@ -75,20 +75,20 @@
     (falling-rock 235226509)))
 
 (defun tree-map-node-hash (node)
-  (if (symbolp node)
-      (get-symbol-hash node)
-      (if (tree-map-node-hash-value node)
-          (tree-map-node-hash-value node)
-          (let ((hash-val 0))
-            (dolist (x '(0 1))
-              (dolist (y '(0 1))
-                (setf hash-val 
-                      (+ hash-val 
-                         (tree-map-node-hash (aref (tree-map-node-subnodes node) x y))))))
-                (setf hash-val (mod hash-val +big-prime+))
-                (setf (tree-map-node-hash-value node)
-                      hash-val)
-                hash-val))))
+  (cond ((null node) 0)
+        ((symbolp node) (get-symbol-hash node))
+        ((tree-map-node-hash-value node)
+         (tree-map-node-hash-value node))
+        (t (let ((hash-val 0))
+             (dolist (x '(0 1))
+               (dolist (y '(0 1))
+                 (setf hash-val 
+                       (+ hash-val 
+                          (tree-map-node-hash (aref (tree-map-node-subnodes node) x y))))))
+             (setf hash-val (mod hash-val +big-prime+))
+             (setf (tree-map-node-hash-value node)
+                   hash-val)
+             hash-val))))
 
 (defun update-node-hash (node)
   (tree-map-node-hash node)
