@@ -1,7 +1,7 @@
 default: lifter
 
 lifter:
-	sbcl --non-interactive	--load src/compile.lisp
+	sbcl --load src/compile.lisp
 
 clean:
 	touch src/*.lisp
