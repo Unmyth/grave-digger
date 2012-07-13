@@ -4,7 +4,7 @@
                  (:file "heap")
                  (:file "map")
                  (:file "simple-map" :depends-on ("map"))
-                 ;;(:file "a-star" :depends-on ("generic-map" "map"))
+                 (:file "a-star" :depends-on ("generic-map" "map"))
                  (:file "main" :depends-on ("generic-map" "heap" "map"))
                 )
   )

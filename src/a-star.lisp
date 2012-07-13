@@ -1,5 +1,5 @@
 (defstruct pos x y)
-(defstruct game-state (:conc-name gs-)
+(defstruct (game-state (:conc-name gs-))
     field
     robot-pos
     path
@@ -26,14 +26,14 @@
           (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b))))))
           ;;(best-known-scores (make-generic-map #'game-state-hash #'game-state-eq)))
     
-        (setf (gs-estimation state (estimate-cost state destination)))
+        (setf (gs-estimation state) (estimate-cost state destination))
         (heap-insert open-states state)
         (loop
             ;; failure
             (when (heap-empty-p open-states)
                 (return-from search-path-to nil))
 
-            (let ((current (heap-remove open-state)))
+            (let ((current (heap-remove open-states)))
                 ;; check goal
                 (if (equal (gs-robot-pos current) destination)
                     (return-from search-path-to current)
