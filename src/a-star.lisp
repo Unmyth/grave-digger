@@ -30,4 +30,5 @@
                 ;; check continuations
                 (dolist (new-state (funcall continuations-fn current))
                     (unless (generic-map-get closed-states new-state)
+                        (setf (gs-estimation new-state) (funcall estimation-fn new-state))
                         (heap-insert open-states new-state)))))))
