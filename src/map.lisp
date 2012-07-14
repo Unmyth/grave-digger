@@ -1,6 +1,16 @@
 
 ;; Symbols:
 ;; robot, wall, rock, lambda, closed-lift, open-lift, earth, space, falling-rock
+(defstruct pos x y)
+
+(defstruct (game-state (:conc-name gs-))
+    field
+    robot-pos
+    cur-score
+    cur-lambdas
+    state ;; in-progress, win, lost, aborted
+    path
+    estimation)
 
 (defun is-rock (sym)
   (or (eq sym 'rock)
@@ -218,3 +228,14 @@ x and y are always local to the node."
    :width (map-width map)
    :height (map-height map)
    :size (tree-map-size map)))
+
+(defun multi-update (map &rest args)
+  (loop while args
+     do (setf map 
+              (update map
+                     (first args)
+                     (second args)
+                     (third args)))
+       (setf args
+             (cdddr args)))
+  map)

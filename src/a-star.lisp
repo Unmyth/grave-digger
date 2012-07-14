@@ -1,9 +1,3 @@
-(defstruct pos x y)
-(defstruct (game-state (:conc-name gs-))
-    field
-    robot-pos
-    path
-    estimation)
 
 (defun game-state-hash (gs)
     (tree-map-hash (gs-field gs)))
