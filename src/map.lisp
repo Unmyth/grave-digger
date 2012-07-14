@@ -9,6 +9,7 @@
     (cur-score 0)
     (cur-lambdas 0)
     (state 'in-progress) ;; in-progress, win, lost, aborted
+    need-to-be-updated
     path
     estimation)
 

@@ -39,6 +39,7 @@
     (let ((initial-state (multiple-value-bind (field rob-pos) (map-from-stdio)
                             (make-game-state 
                                 :field field
+                                :need-to-be-updated (init-need-to-be-updated field)
                                 :robot-pos rob-pos))))
         (do-search initial-state :termination-fn #'simple-termination-fn
                                  :continuations-fn #'produce-continuations
