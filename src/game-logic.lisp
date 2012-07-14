@@ -43,5 +43,5 @@
                                  :continuations-fn #'produce-continuations
                                  :estimation-fn #'max-possible-estimation)
         (if *best-state*
-            (format t "~A" (gs-path *best-state*))
+            (format t "~A" (make-path-string *best-state*))
             (format t "A")))) 

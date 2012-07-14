@@ -26,6 +26,9 @@
         (otherwise (error "wrong symbol")))
       #\Space))
 
+(defun make-path-string (state)
+    (apply #'concatenate 'string (mapcar #'symbol-name (reverse (gs-path state)))))
+
 (defun read-command (g-s)
   (let* ((chr (read-char))
          (sym 
@@ -44,7 +47,7 @@
                 (map-to-string (gs-field new-state)) 
                 (gs-cur-score new-state)
                 (gs-robot-pos new-state)
-                (apply #'concatenate 'string (mapcar #'symbol-name (reverse (gs-path new-state)))))
+                (make-path-string new-state))
         (if (eq (gs-state new-state) 'in-progress)
             (read-command new-state))))))
 
