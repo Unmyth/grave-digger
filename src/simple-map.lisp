@@ -26,6 +26,22 @@
         (otherwise (error "wrong symbol")))
       #\Space))
 
+(defun read-command (g-s)
+  (let* ((chr (read-char))
+         (sym 
+            (case chr
+              (#\w 'u)
+              (#\a 'l)
+              (#\s 'd)
+              (#\d 'r)
+              (#\Space 'w)
+              (#\q 'a)))
+         (new-state update-game-state g-s sym))
+    (read-command new-state)))
+
+
+
+
 (defun map-from-stdio ()
   (let* ((file (second *posix-argv*))
          (str-lst
