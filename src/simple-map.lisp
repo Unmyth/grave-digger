@@ -35,12 +35,16 @@
               (#\s 'd)
               (#\d 'r)
               (#\Space 'w)
-              (#\q 'a)))
-         (new-state update-game-state g-s sym))
-    (read-command new-state)))
-
-
-
+              (#\q 'a)
+              (otherwise 'error))))
+    (if (eq sym 'error)
+      (progn 
+        (format t "Wrong command! Try again~%")
+        (read-command g-s))
+      (let ((new-state (update-game-state g-s sym)))
+        (format t "~A~%Score: ~A~%" (map-to-string (gs-field new-state)) (gs-cur-score new-state))
+        (if (eq (gs-state new-state) 'in-progress)
+            (read-command new-state))))))
 
 (defun map-from-stdio ()
   (let* ((file (second *posix-argv*))
@@ -51,18 +55,22 @@
                collect line)))
          (h (length str-lst))
          (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
-         (smap (create-simple-map w h))
+         (smap (create-tree-map w h))
          (i 0)
-         (j 0))
+         (j 0)
+         (rob-pos nil))
     (loop for str in (reverse str-lst) do
           (setf j 0)
           (mapcar
             (lambda (chr)
-              (update! smap j i (char-to-symbol chr))
-              (setf j (1+ j)))
+              (let ((sym (char-to-symbol chr)))
+                (if (eq sym 'robot) (setf rob-pos (make-pos :x j :y i)))
+                (update! smap j i sym)
+                (setf j (1+ j))))
             (coerce str 'list))
           (setf i (1+ i)))
-    (format t "~A~%" (map-to-string smap))))
+    (values smap rob-pos)))
+;;    (format t "~A~%" (map-to-string smap))))
 
 (defun map-to-string (mp)
   (let ((h (map-height mp))
