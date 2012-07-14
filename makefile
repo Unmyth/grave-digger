@@ -1,11 +1,11 @@
 default: lifter
 
-lifter:
+lifter lifter-interactive:
 	sbcl --load src/compile.lisp
 
 clean:
 	touch src/*.lisp
-	rm -rf lifter
+	rm -rf lifter lifter-interactive
 
-.PHONY: lifter clean
+.PHONY: lifter lifter-interactive clean
 
