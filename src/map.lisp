@@ -39,13 +39,13 @@
                       (array-dimension arr 1))
                 :displaced-to linear-copy)))
 
-(defun copy-update-array (arr x y value)
-  (if (eq (aref arr x y)
+(defun copy-update-node (node x y value)
+  (if (eq (aref (tree-map-node-subnodes node) x y)
           value)
-      arr
-      (let ((copy (copy-array arr)))
-        (setf (aref arr x y) value)
-        copy)))
+      node
+      (let ((copy (copy-array (tree-map-node-subnodes node))))
+        (setf (aref copy x y) value)
+        (create-node copy))))
 
 (defgeneric at-pos (map x y))
 
@@ -74,6 +74,9 @@
 
 (defstruct tree-map-node
   subnodes hash-value)
+
+(defmethod print-object ((obj tree-map-node) stream)
+  (format stream "#<mapnode:hash = ~A>" (tree-map-node-hash-value obj)))
 
 (defun get-symbol-hash (sym)
   (case sym
@@ -127,6 +130,8 @@ x and y are always local to the node."
              (x-offs (- x (* middle local-x)))
              (y-offs (- y (* middle local-y)))
              (subnode (aref (tree-map-node-subnodes node) local-x local-y)))
+        ;;(format t "[~A]<~A>Updating cell at (~A,~A), subnode (~A, ~A), pos (~A,~A)~%"
+        ;;        cur-size func x y local-x local-y x-offs y-offs)
         (unless subnode
           (setf subnode (make-tree-map-node :subnodes (create-2x2-array)))
           (setf (aref (tree-map-node-subnodes node) local-x local-y)
@@ -163,16 +168,14 @@ x and y are always local to the node."
 (defun tree-map-update (node cur-size x y value)
   (tree-map-walk-update node cur-size
                         (lambda (node subnode x y)
-                          (create-node
-                           (copy-update-array
-                            (tree-map-node-subnodes node)
+                           (copy-update-node
+                            node
                             x y
-                            subnode)))
+                            subnode))
                         (lambda (node x y)
-                          (create-node
-                           (copy-update-array 
-                            (tree-map-node-subnodes node) x y
-                            value)))
+                          (copy-update-node 
+                           node x y
+                           value))
                         x y))
 
 (defun tree-map-node-equals (node1 node2)
