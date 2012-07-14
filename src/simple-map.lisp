@@ -27,10 +27,12 @@
       #\Space))
 
 (defun map-from-stdio ()
-  (let* ((str-lst
-           (loop for line = (read-line *standard-input* nil nil)
-             while line
-             collect line))
+  (let* ((file (second *posix-argv*))
+         (str-lst
+           (with-open-file (*standard-input* file)
+             (loop for line = (read-line *standard-input* nil nil)
+               while line
+               collect line)))
          (h (length str-lst))
          (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
          (smap (create-simple-map w h))
