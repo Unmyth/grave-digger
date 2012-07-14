@@ -85,7 +85,8 @@
     (open-lift 12452351)
     (earth 2345211)
     (space 32426187)
-    (falling-rock 235226509)))
+    (falling-rock 235226509)
+    (otherwise 784128375)))
 
 (defun tree-map-node-hash (node)
   (cond ((null node) 0)

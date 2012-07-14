@@ -26,26 +26,54 @@
         (otherwise (error "wrong symbol")))
       #\Space))
 
+(defun read-command (g-s)
+  (let* ((chr (read-char))
+         (sym 
+            (case chr
+              (#\w 'u)
+              (#\a 'l)
+              (#\s 'd)
+              (#\d 'r)
+              (#\Space 'w)
+              (#\q 'a)
+              (otherwise 'error))))
+    (if (eq sym 'error)
+      (progn 
+        (format t "Wrong command! Try again~%")
+        (read-command g-s))
+      (let ((new-state (update-game-state g-s sym)))
+        (format t "~A~%Score: ~A~%Robot at ~A~%" 
+                (map-to-string (gs-field new-state)) 
+                (gs-cur-score new-state)
+                (gs-robot-pos new-state))
+        (if (eq (gs-state new-state) 'in-progress)
+            (read-command new-state))))))
+
 (defun map-from-stdio ()
-  (let* ((str-lst
-           (loop for line = (read-line *standard-input* nil nil)
-             while line
-             collect line))
+  (let* ((file (second *posix-argv*))
+         (str-lst
+           (with-open-file (*standard-input* file)
+             (loop for line = (read-line *standard-input* nil nil)
+               while line
+               collect line)))
          (h (length str-lst))
          (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
-         (smap (create-simple-map w h))
+         (smap (create-tree-map w h))
          (i 0)
-         (j 0))
+         (j 0)
+         (rob-pos nil))
     (loop for str in (reverse str-lst) do
           (setf j 0)
           (mapcar
             (lambda (chr)
-              (update! smap j i (char-to-symbol chr))
-              (setf j (1+ j)))
+              (let ((sym (char-to-symbol chr)))
+                (if (eq sym 'robot) (setf rob-pos (make-pos :x j :y i)))
+                (update! smap j i sym)
+                (setf j (1+ j))))
             (coerce str 'list))
           (setf i (1+ i)))
     (count-lambdas smap)
-    (format t "~A~%" (map-to-string smap))))
+    (values smap rob-pos)))
 
 (defun map-to-string (mp)
   (let ((h (map-height mp))
@@ -77,21 +105,23 @@
          (values old-map robot-pos (+ cur-score (* 25 cur-lamdas)) cur-lamdas 'aborted))
         (t (let ((new-x (case command
                           (l (1- (pos-x robot-pos)))
-                          (r (1+ (pos-x robot-pos)))))
+                          (r (1+ (pos-x robot-pos)))
+                          (otherwise (pos-x robot-pos))))
                  (x-offs-2 (case command
                              (l (- (pos-x robot-pos) 2))
                              (r (+ (pos-x robot-pos) 2))))
                  (new-y (case command
                           (d (1- (pos-y robot-pos)))
-                          (u (1+ (pos-y robot-pos))))))
+                          (u (1+ (pos-y robot-pos)))
+                          (otherwise (pos-y robot-pos)))))
              (cond ((and
                      (or (eq command 'l)
                          (eq command 'r))
                      (is-rock (at-pos old-map new-x new-y))
                      (eq (at-pos old-map x-offs-2 new-y)
-                         'empty))
+                         'space))
                     (values (multi-update old-map 
-                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          (pos-x robot-pos) (pos-y robot-pos) 'space
                                           new-x new-y 'robot
                                           x-offs-2 new-y'rock)
                             (make-pos :x new-x :y new-y)
@@ -101,7 +131,7 @@
                    ((eq (at-pos old-map new-x new-y)
                         'open-lift)
                     (values (multi-update old-map 
-                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          (pos-x robot-pos) (pos-y robot-pos) 'space
                                           new-x new-y 'robot)
                             (make-pos :x new-x :y new-y)
                             (+ cur-score (* 50 cur-lamdas) -1) 
@@ -114,7 +144,7 @@
                                            1
                                            0)))
                       (values (multi-update old-map 
-                                            (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                            (pos-x robot-pos) (pos-y robot-pos) 'space
                                             new-x new-y 'robot)
                               (make-pos :x new-x :y new-y)
                               (1- (+ cur-score (* 25 lambda-coef)))
