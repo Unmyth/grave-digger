@@ -42,7 +42,10 @@
         (format t "Wrong command! Try again~%")
         (read-command g-s))
       (let ((new-state (update-game-state g-s sym)))
-        (format t "~A~%Score: ~A~%" (map-to-string (gs-field new-state)) (gs-cur-score new-state))
+        (format t "~A~%Score: ~A~%Robot at ~A~%" 
+                (map-to-string (gs-field new-state)) 
+                (gs-cur-score new-state)
+                (gs-robot-pos new-state))
         (if (eq (gs-state new-state) 'in-progress)
             (read-command new-state))))))
 
@@ -102,21 +105,23 @@
          (values old-map robot-pos (+ cur-score (* 25 cur-lamdas)) cur-lamdas 'aborted))
         (t (let ((new-x (case command
                           (l (1- (pos-x robot-pos)))
-                          (r (1+ (pos-x robot-pos)))))
+                          (r (1+ (pos-x robot-pos)))
+                          (otherwise (pos-x robot-pos))))
                  (x-offs-2 (case command
                              (l (- (pos-x robot-pos) 2))
                              (r (+ (pos-x robot-pos) 2))))
                  (new-y (case command
                           (d (1- (pos-y robot-pos)))
-                          (u (1+ (pos-y robot-pos))))))
+                          (u (1+ (pos-y robot-pos)))
+                          (otherwise (pos-y robot-pos)))))
              (cond ((and
                      (or (eq command 'l)
                          (eq command 'r))
                      (is-rock (at-pos old-map new-x new-y))
                      (eq (at-pos old-map x-offs-2 new-y)
-                         'empty))
+                         'space))
                     (values (multi-update old-map 
-                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          (pos-x robot-pos) (pos-y robot-pos) 'space
                                           new-x new-y 'robot
                                           x-offs-2 new-y'rock)
                             (make-pos :x new-x :y new-y)
@@ -126,7 +131,7 @@
                    ((eq (at-pos old-map new-x new-y)
                         'open-lift)
                     (values (multi-update old-map 
-                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          (pos-x robot-pos) (pos-y robot-pos) 'space
                                           new-x new-y 'robot)
                             (make-pos :x new-x :y new-y)
                             (+ cur-score (* 50 cur-lamdas) -1) 
@@ -139,7 +144,7 @@
                                            1
                                            0)))
                       (values (multi-update old-map 
-                                            (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                            (pos-x robot-pos) (pos-y robot-pos) 'space
                                             new-x new-y 'robot)
                               (make-pos :x new-x :y new-y)
                               (1- (+ cur-score (* 25 lambda-coef)))
