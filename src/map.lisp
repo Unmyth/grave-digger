@@ -40,12 +40,18 @@
                       (array-dimension arr 1))
                 :displaced-to linear-copy)))
 
+(defun copy-2x2-array (arr)
+  (copy-seq arr))
+
+(defmacro aref2x2 (arr x y)
+  `(aref ,arr (+ ,x (* ,y 2))))
+
 (defun copy-update-node (node x y value)
-  (if (eq (aref (tree-map-node-subnodes node) x y)
+  (if (eq (aref2x2 (tree-map-node-subnodes node) x y)
           value)
       node
-      (let ((copy (copy-array (tree-map-node-subnodes node))))
-        (setf (aref copy x y) value)
+      (let ((copy (copy-2x2-array (tree-map-node-subnodes node))))
+        (setf (aref2x2 copy x y) value)
         (create-node copy))))
 
 (defgeneric at-pos (map x y))
@@ -102,7 +108,7 @@
                (dolist (y '(0 1))
                  (setf hash-val 
                        (+ hash-val 
-                          (tree-map-node-hash (aref (tree-map-node-subnodes node) x y))))))
+                          (tree-map-node-hash (aref2x2 (tree-map-node-subnodes node) x y))))))
              (setf hash-val (mod hash-val +big-prime+))
              (setf (tree-map-node-hash-value node)
                    hash-val)
@@ -118,7 +124,7 @@
     node))
 
 (defun create-2x2-array ()
-  (make-array '(2 2) :initial-element nil))
+  (make-array '(4) :initial-element nil))
 
 (defun tree-map-walk-update (node cur-size func terminal-func x y)
   "Call (func node subnode x y) for intermediate nodes and (terminal-func node x y) for leaf node along the path.
@@ -130,12 +136,12 @@ x and y are always local to the node."
              (local-y (truncate y middle))
              (x-offs (- x (* middle local-x)))
              (y-offs (- y (* middle local-y)))
-             (subnode (aref (tree-map-node-subnodes node) local-x local-y)))
+             (subnode (aref2x2 (tree-map-node-subnodes node) local-x local-y)))
         ;;(format t "[~A]<~A>Updating cell at (~A,~A), subnode (~A, ~A), pos (~A,~A)~%"
         ;;        cur-size func x y local-x local-y x-offs y-offs)
         (unless subnode
           (setf subnode (make-tree-map-node :subnodes (create-2x2-array)))
-          (setf (aref (tree-map-node-subnodes node) local-x local-y)
+          (setf (aref2x2 (tree-map-node-subnodes node) local-x local-y)
                 subnode))
         (funcall func 
                  node
@@ -152,7 +158,7 @@ x and y are always local to the node."
                           (declare (ignore node x y))
                           subnode)
                         (lambda (node x y)
-                          (aref (tree-map-node-subnodes node) x y))
+                          (aref2x2 (tree-map-node-subnodes node) x y))
                         x y))
 
 (defun tree-map-update! (node cur-size x y value)
@@ -161,7 +167,7 @@ x and y are always local to the node."
                           (declare (ignore node subnode x y))
                           nil)
                         (lambda (node x y)
-                          (setf (aref (tree-map-node-subnodes node) x y)
+                          (setf (aref2x2 (tree-map-node-subnodes node) x y)
                                 value)
                           nil)
                         x y))
@@ -188,8 +194,8 @@ x and y are always local to the node."
                    (tree-map-node-hash node2))
             (dolist (x '(0 1))
               (dolist (y '(0 1))
-                (unless (tree-map-node-equals (aref (tree-map-node-subnodes node1) x y)
-                                              (aref (tree-map-node-subnodes node2) x y))
+                (unless (tree-map-node-equals (aref2x2 (tree-map-node-subnodes node1) x y)
+                                              (aref2x2 (tree-map-node-subnodes node2) x y))
                   (return-from tree-map-node-equals nil))))
             t)
           nil)))
@@ -214,17 +220,19 @@ x and y are always local to the node."
 (defun tree-map-hash (tree-map)
   (tree-map-node-hash (tree-map-top tree-map)))
 
-(defun tree-map-equals (tree-map1 tree-map2)
+(defun tree-map-equals-1 (tree-map1 tree-map2)
   (and
    (= (tree-map-size tree-map1)
       (tree-map-size tree-map2))
    (tree-map-node-equals (tree-map-top tree-map1)
                          (tree-map-top tree-map2))))
 
-;;(defun tree-map-equals (a b)
-;;    (let ((r (tree-map-equals-1 a b)))
-;;        (format t "Comparing a=~A with b=~A, result is ~A~%" a b r)
-;;        r))
+(defun tree-map-equals (a b)
+    (let ((r (tree-map-equals-1 a b)))
+;;        (unless (eq (not (not r))
+;;                    (string= (map-to-string a) (map-to-string b)))
+;;            (format t "Bad compare a=~A with b=~A, result is ~A~%" a b r))
+        r))
 
 (defmethod at-pos ((map tree-map) x y)
   (tree-map-at (tree-map-top map) (tree-map-size map)

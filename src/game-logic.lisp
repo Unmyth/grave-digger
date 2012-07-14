@@ -21,14 +21,15 @@
 
 (defvar *best-state* nil)
 
-(defun is-terminal-state? (state) (case (gs-state state) ((aborted win) t)))
+(defun is-winning-state? (state) (case (gs-state state) (win t)))
+(defun is-terminal-state? (state) (case (gs-state state) ((aborted win lost) t)))
 
 (defun simple-termination-fn (state)
     (when (and (is-terminal-state? state)
                (or (null *best-state*)
                    (> (gs-cur-score state) (gs-cur-score *best-state*))))
         (setf *best-state* state))
-    nil)
+    (is-winning-state? state))
 
 (defun produce-continuations (state)
     (unless (is-terminal-state? state) ;; states with 'a in the end do not produce continuations
@@ -45,5 +46,8 @@
                                  :continuations-fn #'produce-continuations
                                  :estimation-fn #'max-possible-estimation)
         (if *best-state*
-            (format t "~A~%final state is:~A~%" (make-path-string *best-state*) *best-state*)
+            (format t "~A~%final state is:~A~%Iters num is: ~A~%"
+                        (make-path-string *best-state*)
+                        *best-state*
+                        *iters-count*)
             (format t "A~%")))) 
