@@ -33,3 +33,15 @@
     (unless (is-terminal-state? state) ;; states with 'a in the end do not produce continuations
         (mapcar (lambda (command) (update-game-state state command))
                 '(l r u d w a))))
+
+(defun play-a-game ()
+    (let ((initial-state (multiple-value-bind (field rob-pos) (map-from-stdio)
+                            (make-game-state 
+                                :field field
+                                :robot-pos rob-pos))))
+        (do-search initial-state :termination-fn #'simple-termination-fn
+                                 :continuations-fn #'produce-continuations
+                                 :estimation-fn #'max-possible-estimation)
+        (if *best-state*
+            (format t "~A" (gs-path *best-state*))
+            (format t "A")))) 

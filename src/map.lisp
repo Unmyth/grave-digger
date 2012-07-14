@@ -6,9 +6,9 @@
 (defstruct (game-state (:conc-name gs-))
     field
     robot-pos
-    cur-score
-    cur-lambdas
-    state ;; in-progress, win, lost, aborted
+    (cur-score 0)
+    (cur-lambdas 0)
+    (state 'in-progress) ;; in-progress, win, lost, aborted
     path
     estimation)
 
