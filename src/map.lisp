@@ -200,7 +200,7 @@ x and y are always local to the node."
 
 (defun create-tree-map (width height)
   (let ((subnodes (create-2x2-array))
-        (size (ash 2 (integer-length (max width height)))))
+        (size (ash 1 (integer-length (max width height)))))
     (make-instance 'tree-map
                    :top-node (make-tree-map-node :subnodes subnodes)
                    :width width

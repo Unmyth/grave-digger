@@ -38,14 +38,13 @@
               (#\q 'a)
               (otherwise 'error))))
     (if (eq sym 'error)
-      (progn 
-        (format t "Wrong command! Try again~%")
-        (read-command g-s))
+        (read-command g-s)
       (let ((new-state (update-game-state g-s sym)))
-        (format t "~A~%Score: ~A~%Robot at ~A~%" 
+        (format t "~A~%Score: ~A~%Robot at ~A~%Path: ~A~%" 
                 (map-to-string (gs-field new-state)) 
                 (gs-cur-score new-state)
-                (gs-robot-pos new-state))
+                (gs-robot-pos new-state)
+                (apply #'concatenate 'string (mapcar #'symbol-name (reverse (gs-path new-state)))))
         (if (eq (gs-state new-state) 'in-progress)
             (read-command new-state))))))
 
@@ -152,32 +151,32 @@
                               'in-progress)))
                    (t (update-robot old-map robot-pos 'w cur-score cur-lamdas)))))))
 
-(defun update-cell (old-map i j no-more-lambdas)
+(defun update-cell (old-map new-map i j no-more-lambdas)
   (if (is-rock (at-pos old-map j i))
     (cond
       ((eq (at-pos old-map j (1- i)) 'space)
-            (let ((tmp-map (update old-map j i 'space)))
+            (let ((tmp-map (update new-map j i 'space)))
                 (update tmp-map j (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'rock)
             (eq (at-pos old-map (1+ j) i) 'space)
             (eq (at-pos old-map (1+ j) (1- i)) 'space))
-            (let ((tmp-map (update old-map j i 'space)))
+            (let ((tmp-map (update new-map j i 'space)))
                 (update tmp-map (1+ j) (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'rock)
             (eq (at-pos old-map (1- j) i) 'space)
             (eq (at-pos old-map (1- j) (1- i)) 'space))
-            (let ((tmp-map (update old-map j i 'space)))
+            (let ((tmp-map (update new-map j i 'space)))
                 (update tmp-map (1- j) (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'lambda)
             (eq (at-pos old-map (1+ j) i) 'space)
             (eq (at-pos old-map (1+ j) (1- i)) 'space))
-            (let ((tmp-map (update old-map j i 'space)))
+            (let ((tmp-map (update new-map j i 'space)))
                 (update tmp-map (1+ j) (1- i) 'falling-rock)))
-      (t (update old-map j i 'rock)))
+      (t (update new-map j i 'rock)))
       (if (and (eq (at-pos old-map j i) 'closed-lift) ;;No need to search all map for lambdas everyt update. Can be optimized
                no-more-lambdas)
-        (update old-map j i 'open-lift)
-        old-map)))
+        (update new-map j i 'open-lift)
+        new-map)))
 
 (defun update-map (map no-more-lambdas)
   (let ((nmap map)
@@ -185,7 +184,7 @@
         (w (map-width map)))
     (loop for i from 0 to (1- h) do
           (loop for j from 0 to (1- w) do
-                (setf nmap (update-cell nmap i j no-more-lambdas))))
+                (setf nmap (update-cell map nmap i j no-more-lambdas))))
     nmap))
 
 (defun have-lost (the-map robot-pos)
