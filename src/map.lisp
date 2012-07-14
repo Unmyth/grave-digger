@@ -40,9 +40,12 @@
                 :displaced-to linear-copy)))
 
 (defun copy-update-array (arr x y value)
-  (let ((copy (copy-array arr)))
-    (setf (aref arr x y) value)
-    copy))
+  (if (eq (aref arr x y)
+          value)
+      arr
+      (let ((copy (copy-array arr)))
+        (setf (aref arr x y) value)
+        copy)))
 
 (defgeneric at-pos (map x y))
 
