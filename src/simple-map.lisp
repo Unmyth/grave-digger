@@ -44,6 +44,7 @@
               (setf j (1+ j)))
             (coerce str 'list))
           (setf i (1+ i)))
+    (count-lambdas smap)
     (format t "~A~%" (map-to-string smap))))
 
 (defun map-to-string (mp)
@@ -56,15 +57,16 @@
           (push #\NewLine lst))
     (coerce lst 'string)))
 
-(defun no-more-lambdas (old-map)
+(defvar *total-lambdas*)
+
+(defun count-lambdas (old-map)
+  (setf *total-lambdas* 0)
   (let ((h (map-height old-map))
-        (w (map-width old-map))
-        (flag t))
+        (w (map-width old-map)))
     (loop for i from 0 to (1- h) do
-      (loop for j from 0 to (1- w) do
-        (if (eq (at-pos old-map j i) 'lambda)
-          (setf flag nil))))
-    flag))
+         (loop for j from 0 to (1- w) do
+              (if (eq (at-pos old-map j i) 'lambda)
+                  (incf *total-lambdas*))))))
 
 ;; Returned states : in-progress, win, lost, aborted
 
@@ -120,7 +122,7 @@
                               'in-progress)))
                    (t (update-robot old-map robot-pos 'w cur-score cur-lamdas)))))))
 
-(defun update-cell (old-map i j)
+(defun update-cell (old-map i j no-more-lambdas)
   (if (is-rock (at-pos old-map j i))
     (cond
       ((eq (at-pos old-map j (1- i)) 'space)
@@ -143,17 +145,17 @@
                 (update tmp-map (1+ j) (1- i) 'falling-rock)))
       (t (update old-map j i 'rock)))
       (if (and (eq (at-pos old-map j i) 'closed-lift) ;;No need to search all map for lambdas everyt update. Can be optimized
-               (no-more-lambdas old-map))
+               no-more-lambdas)
         (update old-map j i 'open-lift)
         old-map)))
 
-(defun update-map (map)
+(defun update-map (map no-more-lambdas)
   (let ((nmap map)
         (h (map-height map))
         (w (map-width map)))
     (loop for i from 0 to (1- h) do
           (loop for j from 0 to (1- w) do
-                (setf nmap (update-cell nmap i j))))
+                (setf nmap (update-cell nmap i j no-more-lambdas))))
     nmap))
 
 (defun have-lost (the-map robot-pos)
@@ -166,7 +168,7 @@
   (multiple-value-bind (new-map new-robot-pos new-score new-lambdas after-move-state)
       (update-robot (gs-field gs) (gs-robot-pos gs) command
                     (gs-cur-score gs) (gs-cur-lambdas gs))
-    (let* ((new-map-2 (update-map new-map))
+    (let* ((new-map-2 (update-map new-map (= new-lambdas *total-lambdas*)))
            (new-state (if (have-lost new-map-2 new-robot-pos)
                           'lost
                           after-move-state)))
