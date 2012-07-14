@@ -84,6 +84,60 @@
           (setf flag nil))))
     flag))
 
+;; Returned states : in-progress, win, lost, aborted
+
+(defun update-robot (old-map robot-pos command cur-score cur-lamdas)
+  (cond ((eq command 'w)
+         (values old-map robot-pos (1- cur-score) cur-lamdas 'in-progress))
+        ((eq command 'a)
+         (values old-map robot-pos (+ cur-score (* 25 cur-lamdas)) cur-lamdas 'aborted))
+        (t (let ((new-x (case command
+                          (l (1- (pos-x robot-pos)))
+                          (r (1+ (pos-x robot-pos)))))
+                 (x-offs-2 (case command
+                             (l (- (pos-x robot-pos) 2))
+                             (r (+ (pos-x robot-pos) 2))))
+                 (new-y (case command
+                          (d (1- (pos-y robot-pos)))
+                          (u (1+ (pos-y robot-pos))))))
+             (cond ((and
+                     (or (eq command 'l)
+                         (eq command 'r))
+                     (is-rock (at-pos old-map new-x new-y))
+                     (eq (at-pos old-map x-offs-2 new-y)
+                         'empty))
+                    (values (multi-update old-map 
+                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          new-x new-y 'robot
+                                          x-offs-2 new-y'rock)
+                            (make-pos :x new-x :y new-y)
+                            (1- cur-score)
+                            cur-lamdas
+                            'in-progress))
+                   ((eq (at-pos old-map new-x new-y)
+                        'open-lift)
+                    (values (multi-update old-map 
+                                          (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                          new-x new-y 'robot)
+                            (make-pos :x new-x :y new-y)
+                            (+ cur-score (* 50 cur-lamdas) -1) 
+                            cur-lamdas
+                            'win))
+                   ((case (at-pos old-map new-x new-y)
+                      ((space earth lambda) t)
+                      (otherwise nil))
+                    (let ((lambda-coef (if (eq (at-pos old-map new-x new-y) 'lambda)
+                                           1
+                                           0)))
+                      (values (multi-update old-map 
+                                            (pos-x robot-pos) (pos-y robot-pos) 'empty
+                                            new-x new-y 'robot)
+                              (make-pos :x new-x :y new-y)
+                              (1- (+ cur-score (* 25 lambda-coef)))
+                              (+ lambda-coef cur-lamdas)
+                              'in-progress)))
+                   (t (update-robot old-map robot-pos 'w cur-score cur-lamdas)))))))
+
 (defun update-cell (old-map i j)
   (if (is-rock (at-pos old-map j i))
     (cond
@@ -119,3 +173,24 @@
           (loop for j from 0 to (1- w) do
                 (setf nmap (update-cell nmap i j))))
     nmap))
+
+(defun have-lost (the-map robot-pos)
+  (eq (at-pos the-map 
+              (pos-x robot-pos)
+              (1+ (pos-y robot-pos)))
+      'falling-rock))
+
+(defun update-game-state (gs command)
+  (multiple-value-bind (new-map new-robot-pos new-score new-lambdas after-move-state)
+      (update-robot (gs-field gs) (gs-robot-pos gs) command
+                    (gs-cur-score gs) (gs-cur-lambdas gs))
+    (let* ((new-map-2 (update-map new-map))
+           (new-state (if (have-lost new-map-2 new-robot-pos)
+                          'lost
+                          after-move-state)))
+      (make-game-state :field new-map-2
+                       :robot-pos new-robot-pos
+                       :cur-score new-score
+                       :cur-lambdas new-lambdas
+                       :state new-state
+                       :path (cons command (gs-path gs))))))
