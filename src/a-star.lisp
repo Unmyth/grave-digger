@@ -9,7 +9,7 @@
     (tree-map-hash (gs-field gs)))
 
 (defun game-state-eq (a b)
-    (tree-map-equals a b))
+    (tree-map-equals (gs-field a) (gs-field b)))
 
 (defun estimate-cost (gs pos)
     )
