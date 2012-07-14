@@ -90,7 +90,8 @@
       (t (update old-map j i 'rock)))
       (if (and (eq (at-pos old-map j i) 'closed-lift) ;;No need to search all map for lambdas everyt update. Can be optimized
                (no-more-lambdas old-map))
-        (update old-map j i 'open-lift))))
+        (update old-map j i 'open-lift)
+        old-map)))
 
 (defun update-map (map)
   (let ((nmap map)
