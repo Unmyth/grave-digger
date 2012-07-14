@@ -2,18 +2,22 @@
                         (:constructor mk-generic-map))
     hash-function
     compare-function
-    table)
+    table
+	(size 0))
 
 (defun make-generic-map (hash-function compare-function)
     (mk-generic-map :hash-function hash-function
                     :compare-function compare-function
                     :table (make-hash-table :test #'eq)))
 
-(defun generic-map-add (gmap key &optional value)
+(defun generic-map-add (gmap key &optional (value t))
     (push (cons key value)
           (gethash (funcall (gm-hash-function gmap) key)
                    (gm-table gmap)))
+	(incf (gm-size gmap))
     gmap)
+
+(defun generic-map-size (gmap) (gm-size gmap))
 
 (defun generic-map-get (gmap key)
     (cdr

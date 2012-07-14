@@ -220,6 +220,11 @@ x and y are always local to the node."
    (tree-map-node-equals (tree-map-top tree-map1)
                          (tree-map-top tree-map2))))
 
+;;(defun tree-map-equals (a b)
+;;    (let ((r (tree-map-equals-1 a b)))
+;;        (format t "Comparing a=~A with b=~A, result is ~A~%" a b r)
+;;        r))
+
 (defmethod at-pos ((map tree-map) x y)
   (tree-map-at (tree-map-top map) (tree-map-size map)
                x y))

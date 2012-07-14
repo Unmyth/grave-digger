@@ -14,6 +14,7 @@
         ;; initiate the loop 
         (setf (gs-estimation state) (funcall estimation-fn state))
         (heap-insert open-states state)
+        ;;(format t "added initial state: ~A~%" state)
 
         ;; main loop
         (loop
@@ -31,4 +32,6 @@
                 (dolist (new-state (funcall continuations-fn current))
                     (unless (generic-map-get closed-states new-state)
                         (setf (gs-estimation new-state) (funcall estimation-fn new-state))
+                        ;;(format t "closed state size: ~A adding new state: ~A~%"
+                        ;;          (generic-map-size closed-states) new-state)
                         (heap-insert open-states new-state)))))))

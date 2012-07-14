@@ -210,3 +210,7 @@
                        :cur-lambdas new-lambdas
                        :state new-state
                        :path (cons command (gs-path gs))))))
+
+
+(defmethod print-object ((obj tree-map) stream)
+    (format stream "hash is ~A, map is:~%~A~%" (tree-map-hash obj) (map-to-string obj)))
