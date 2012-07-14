@@ -36,17 +36,13 @@
         (mapcar (lambda (command) (update-game-state state command))
                 '(l r u d w a))))
 
-(defun play-a-game ()
-    (let ((initial-state (multiple-value-bind (field rob-pos) (map-from-stdio)
-                            (make-game-state 
-                                :field field
-                                :robot-pos rob-pos))))
-        (do-search initial-state :termination-fn #'simple-termination-fn
-                                 :continuations-fn #'produce-continuations
-                                 :estimation-fn #'max-possible-estimation)
-        (if *best-state*
-            (format t "~A~%final state is:~A~%Iters num is: ~A~%"
-                        (make-path-string *best-state*)
-                        *best-state*
-                        *iters-count*)
-            (format t "A~%")))) 
+(defun play-a-game (initial-state)
+    (do-search initial-state :termination-fn #'simple-termination-fn
+                             :continuations-fn #'produce-continuations
+                             :estimation-fn #'max-possible-estimation)
+    (if *best-state*
+        (format t "~A~%final state is:~A~%Iters num is: ~A~%"
+                    (make-path-string *best-state*)
+                    *best-state*
+                    *iters-count*)
+        (format t "A~%"))) 

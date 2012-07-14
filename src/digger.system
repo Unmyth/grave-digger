@@ -6,6 +6,7 @@
                  (:file "simple-map" :depends-on ("map"))
                  (:file "a-star" :depends-on ("generic-map" "map"))
                  (:file "game-logic" :depends-on ("a-star" "map" "simple-map"))
+                 (:file "nearest-lambda-search" :depends-on ("a-star" "map" "simple-map" "game-logic"))
                  (:file "main" :depends-on ("generic-map" "heap" "map" "a-star" "game-logic"))
                 )
   )
