@@ -10,10 +10,12 @@
                        continuations-fn)
     (let ((closed-states     (make-generic-map #'game-state-hash #'game-state-eq))
           (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b))))))
-          ;;(best-known-scores (make-generic-map #'game-state-hash #'game-state-eq)))
-    
+        
+        ;; initiate the loop 
         (setf (gs-estimation state) (funcall estimation-fn state))
         (heap-insert open-states state)
+
+        ;; main loop
         (loop
             ;; failure
             (when (heap-empty-p open-states)

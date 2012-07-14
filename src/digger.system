@@ -5,7 +5,8 @@
                  (:file "map")
                  (:file "simple-map" :depends-on ("map"))
                  (:file "a-star" :depends-on ("generic-map" "map"))
-                 (:file "main" :depends-on ("generic-map" "heap" "map"))
+                 (:file "game-logic" :depends-on ("a-star" "map" "simple-map"))
+                 (:file "main" :depends-on ("generic-map" "heap" "map" "a-star" "game-logic"))
                 )
   )
 
