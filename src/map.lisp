@@ -219,17 +219,19 @@ x and y are always local to the node."
 (defun tree-map-hash (tree-map)
   (tree-map-node-hash (tree-map-top tree-map)))
 
-(defun tree-map-equals (tree-map1 tree-map2)
+(defun tree-map-equals-1 (tree-map1 tree-map2)
   (and
    (= (tree-map-size tree-map1)
       (tree-map-size tree-map2))
    (tree-map-node-equals (tree-map-top tree-map1)
                          (tree-map-top tree-map2))))
 
-;;(defun tree-map-equals (a b)
-;;    (let ((r (tree-map-equals-1 a b)))
-;;        (format t "Comparing a=~A with b=~A, result is ~A~%" a b r)
-;;        r))
+(defun tree-map-equals (a b)
+    (let ((r (tree-map-equals-1 a b)))
+;;        (unless (eq (not (not r))
+;;                    (string= (map-to-string a) (map-to-string b)))
+;;            (format t "Bad compare a=~A with b=~A, result is ~A~%" a b r))
+        r))
 
 (defmethod at-pos ((map tree-map) x y)
   (tree-map-at (tree-map-top map) (tree-map-size map)

@@ -4,6 +4,8 @@
 (defun game-state-eq (a b)
     (tree-map-equals (gs-field a) (gs-field b)))
 
+(defvar *iters-count* 0)
+
 (defun do-search (state ;; game-state
                   &key termination-fn
                        estimation-fn
@@ -18,6 +20,8 @@
 
         ;; main loop
         (loop
+            (incf *iters-count*)
+
             ;; failure
             (when (heap-empty-p open-states)
                 (return-from do-search nil))
@@ -27,6 +31,9 @@
                 (if (funcall termination-fn current)
                     (return-from do-search current)
                     (generic-map-add closed-states current))
+
+                (when (= (mod *iters-count* 50) 0)
+                    (format t "On iteration ~A, state is ~A~%" *iters-count* current))  
 
                 ;; check continuations
                 (dolist (new-state (funcall continuations-fn current))
