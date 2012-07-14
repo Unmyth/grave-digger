@@ -50,10 +50,10 @@
   (let ((h (map-height mp))
         (w (map-width mp))
         (lst nil))
-    (loop for i from (1- h) downto 0 do
+    (loop for i from 0 to (1- h) do
           (loop for j from (1- w) downto 0 do
                (push (symbol-to-char (at-pos mp j i)) lst))
-          (if (> i 0) (push #\NewLine lst)))
+          (push #\NewLine lst))
     (coerce lst 'string)))
 
 (defun no-more-lambdas (old-map)
