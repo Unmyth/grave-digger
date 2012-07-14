@@ -1,3 +1,5 @@
+(defvar *total-lambdas*)
+
 (defun char-to-symbol (chr)
   (case chr
     (#\R 'robot)
@@ -43,11 +45,14 @@
     (if (eq sym 'error)
         (read-command g-s)
       (let ((new-state (update-game-state g-s sym)))
-        (format t "~A~%Score: ~A~%Robot at ~A~%Path: ~A~%" 
+        (format t "~A~%Score: ~A~%Robot at ~A~%Path: ~A~% Lambdas ~A/~A~%"
                 (map-to-string (gs-field new-state)) 
                 (gs-cur-score new-state)
                 (gs-robot-pos new-state)
-                (make-path-string new-state))
+                (make-path-string new-state)
+                (gs-cur-lambdas new-state)
+                *total-lambdas*
+                )
         (if (eq (gs-state new-state) 'in-progress)
             (read-command new-state))))))
 
@@ -60,12 +65,22 @@
                collect line)))
          (h (length str-lst))
          (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
-         (smap (create-tree-map w h))
-         (i 0)
-         (j 0)
+         (smap (create-tree-map (+ w 4) (+ h 4)))
+         (i 2)
+         (j 2)
          (rob-pos nil))
+    (loop for x from 0 to (1+ w) do
+          (update! smap x 0 'wall)
+          (update! smap x 1 'wall)
+          (update! smap x (+ 2 h) 'wall)
+          (update! smap x (1+ h) 'wall))
+    (loop for y from 0 to (1+ h) do
+          (update! smap 0 y 'wall)
+          (update! smap 1 y 'wall)
+          (update! smap (+ 2 w) y 'wall)
+          (update! smap (1+ w) y 'wall))
     (loop for str in (reverse str-lst) do
-          (setf j 0)
+          (setf j 2)
           (mapcar
             (lambda (chr)
               (let ((sym (char-to-symbol chr)))
@@ -81,13 +96,11 @@
   (let ((h (map-height mp))
         (w (map-width mp))
         (lst nil))
-    (loop for i from 0 to (1- h) do
-          (loop for j from (1- w) downto 0 do
+    (loop for i from 2 to (- h 3) do
+          (loop for j from (- w 3) downto 2 do
                (push (symbol-to-char (at-pos mp j i)) lst))
           (push #\NewLine lst))
     (coerce lst 'string)))
-
-(defvar *total-lambdas*)
 
 (defun count-lambdas (old-map)
   (setf *total-lambdas* 0)
@@ -154,57 +167,68 @@
                               'in-progress)))
                    (t (update-robot old-map robot-pos 'w cur-score cur-lamdas)))))))
 
+(defun add-to-heap-above-falling-rock (heap j i)
+  (heap-insert heap (make-pos :x j :y (1+ i)))
+  (heap-insert heap (make-pos :x (1- j) :y (1+ i)))
+  (heap-insert heap (make-pos :x (1+ j) :y (1+ i))))
+
 (defun update-cell (old-map new-map i j no-more-lambdas need-to-be-updated)
   (if (is-rock (at-pos old-map j i))
     (cond
       ((eq (at-pos old-map j (1- i)) 'space)
             (let ((tmp-map (update new-map j i 'space)))
-                (heap-insert need-to-be-updated (make-pos :x j :y (1- i)))
-                (update tmp-map j (1- i) 'falling-rock)))
+              (add-to-heap-above-falling-rock need-to-be-updated j i)
+              (heap-insert need-to-be-updated (make-pos :x j :y (1- i)))
+              (update tmp-map j (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'rock)
             (eq (at-pos old-map (1+ j) i) 'space)
             (eq (at-pos old-map (1+ j) (1- i)) 'space))
             (let ((tmp-map (update new-map j i 'space)))
-                (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
-                (update tmp-map (1+ j) (1- i) 'falling-rock)))
+              (add-to-heap-above-falling-rock need-to-be-updated j i)
+              (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
+              (update tmp-map (1+ j) (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'rock)
             (eq (at-pos old-map (1- j) i) 'space)
             (eq (at-pos old-map (1- j) (1- i)) 'space))
             (let ((tmp-map (update new-map j i 'space)))
-                (heap-insert need-to-be-updated (make-pos :x (1- j) :y (1- i)))
-                (update tmp-map (1- j) (1- i) 'falling-rock)))
+              (add-to-heap-above-falling-rock need-to-be-updated j i)
+              (heap-insert need-to-be-updated (make-pos :x (1- j) :y (1- i)))
+              (update tmp-map (1- j) (1- i) 'falling-rock)))
       ((and (eq (at-pos old-map j (1- i)) 'lambda)
             (eq (at-pos old-map (1+ j) i) 'space)
             (eq (at-pos old-map (1+ j) (1- i)) 'space))
             (let ((tmp-map (update new-map j i 'space)))
-                (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
-                (update tmp-map (1+ j) (1- i) 'falling-rock)))
+              (add-to-heap-above-falling-rock need-to-be-updated j i)
+              (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
+              (update tmp-map (1+ j) (1- i) 'falling-rock)))
       (t (update new-map j i 'rock)))
     (if (eq (at-pos old-map j i) 'closed-lift)
       (progn
         (heap-insert need-to-be-updated (make-pos :x j :y i))
         (if no-more-lambdas
-          (update new-map j i 'open-lift))
-          new-map)
+          (update new-map j i 'open-lift)
+          new-map))
       new-map)))
 
 (defun quick-update-map (map need-to-be-updated no-more-lambdas)
-  (let ((new-need-to-be-updated (create-heap #'need-to-be-updated-heap-lambda))
+  (let ((old-need-to-be-updated (heap-copy need-to-be-updated))
+        (new-need-to-be-updated (create-heap #'need-to-be-updated-heap-lambda))
         (new-map map))
-     (loop while (not (heap-empty-p need-to-be-updated)) do
-           (let ((cur-pos (heap-remove need-to-be-updated)))
-             (setf new-map (update-cell map new-map (pos-y cur-pos) (pos-x cur-pos) no-more-lambdas new-need-to-be-updated))))
-     (values new-map new-need-to-be-updated)))
+    (loop while (not (heap-empty-p old-need-to-be-updated)) do
+          (let ((cur-pos (heap-remove old-need-to-be-updated)))
+;;            (format t "~A:~A==~A~%" (pos-x cur-pos) (pos-y cur-pos) (at-pos map (pos-x cur-pos) (pos-y cur-pos)))
+;;            (format t "HEAP==~A~%" old-need-to-be-updated)
+            (setf new-map (update-cell map new-map (pos-y cur-pos) (pos-x cur-pos) no-more-lambdas new-need-to-be-updated))))
+    (values new-map new-need-to-be-updated)))
 
-
-(defun update-map (map no-more-lambdas)
+(defun update-map (map need-to-be-updated no-more-lambdas)
   (let ((nmap map)
         (h (map-height map))
         (w (map-width map)))
     (loop for i from 0 to (1- h) do
           (loop for j from 0 to (1- w) do
                 (setf nmap (update-cell map nmap i j no-more-lambdas (create-heap #'need-to-be-updated-heap-lambda)))))
-    nmap))
+    (values nmap (create-heap #'need-to-be-updated-heap-lambda))))
 
 (defun need-to-be-updated-heap-lambda (a b)
   (if (< (pos-y a) (pos-y b))
@@ -231,21 +255,34 @@
       'falling-rock))
 
 (defun update-game-state (gs command)
-  (let ((old-need-to-be-updated (gs-need-to-be-updated gs)))
+  (let ((old-need-to-be-updated (heap-copy (gs-need-to-be-updated gs))))
     (multiple-value-bind (new-map new-robot-pos new-score new-lambdas after-move-state)
         (update-robot (gs-field gs) (gs-robot-pos gs) command
                       (gs-cur-score gs) (gs-cur-lambdas gs))
-        (heap-insert old-need-to-be-updated (make-pos :x (1- (pos-x new-robot-pos)) :y (1+ (pos-y new-robot-pos))))
-        (heap-insert old-need-to-be-updated (make-pos :x (pos-x new-robot-pos) :y (1+ (pos-y new-robot-pos))))
-        (heap-insert old-need-to-be-updated (make-pos :x (1+ (pos-x new-robot-pos)) :y (1+ (pos-y new-robot-pos))))
-        (heap-insert old-need-to-be-updated (make-pos :x (1- (pos-x new-robot-pos)) :y (pos-y new-robot-pos)))
-        (heap-insert old-need-to-be-updated (make-pos :x (1+ (pos-x new-robot-pos)) :y (pos-y new-robot-pos)))
+        (let ((x (pos-x new-robot-pos))
+              (y (pos-y new-robot-pos)))
+            (heap-insert old-need-to-be-updated (make-pos :x (1- x) :y (1+ y)))
+            (heap-insert old-need-to-be-updated (make-pos :x x :y (1+ y)))
+            (heap-insert old-need-to-be-updated (make-pos :x (1+ x) :y (1+ y)))
+            (heap-insert old-need-to-be-updated (make-pos :x (+ x 2) :y (1+ y)))
+            (heap-insert old-need-to-be-updated (make-pos :x (- x 2) :y (1+ y)))
+            (heap-insert old-need-to-be-updated (make-pos :x (1- x) :y y))
+            (heap-insert old-need-to-be-updated (make-pos :x (1+ x) :y y))
+            (heap-insert old-need-to-be-updated (make-pos :x (+ x 2) :y y))
+            (heap-insert old-need-to-be-updated (make-pos :x (- x 2) :y y)))
         (multiple-value-bind  (new-map-2 new-need-to-be-updated)
               (quick-update-map new-map old-need-to-be-updated (= new-lambdas *total-lambdas*))
-              (let ((new-state (if (have-lost new-map-2 new-robot-pos)
+              (let* ((alternative-state (update-map new-map old-need-to-be-updated (= new-lambdas *total-lambdas*)))
+;                     (new-state (if (have-lost new-map-2 new-robot-pos)
+                     (new-state (if (have-lost alternative-state new-robot-pos)
                                     'lost
                                     after-move-state)))
-                (make-game-state :field new-map-2
+;                (unless (tree-map-equals new-map-2 alternative-state)
+;                  (format t "1==~A~%" new-map-2)
+;                  (format t "2==~A~%" alternative-state)
+;                  (format t "heap=~A%" old-need-to-be-updated)
+;                  (error))
+                (make-game-state :field alternative-state
                                  :robot-pos new-robot-pos
                                  :cur-score new-score
                                  :cur-lambdas new-lambdas

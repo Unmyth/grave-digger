@@ -75,6 +75,14 @@ be a list or NIL."
   (heap-init (make-heap) less-fn :order order
 	     :initial-contents initial-contents))
 
+(defun heap-copy (heap)
+  (make-heap
+    :less-fn (heap-less-fn heap)
+;;    :a (copy-seq (heap-a heap))
+    :a (make-array (length (heap-a heap)) :initial-contents (heap-a heap) :adjustable t :fill-pointer (1- (length (heap-a heap))))
+    :order (heap-order heap)
+    :max-count (heap-max-count heap)))
+
 (defun heap-clear (heap)
   "Remove all elements from the heap, leaving it empty.  Faster
 (& more convenient) than calling HEAP-REMOVE until the heap is
