@@ -27,15 +27,37 @@
 
 (defvar *iters-count* 0)
 
+(defun make-closed-state-table ()
+  ;;(list 
+   (make-generic-map #'game-state-hash #'game-state-eq)
+  ;; (make-hash-table :test #'equalp))
+  )
+
+(defun add-closed-state (tab state)
+  (generic-map-add tab state)
+;;  (if (gethash (gs-robot-pos state) (second tab))
+;;      (incf (gethash (gs-robot-pos state) (second tab)))
+;;      (setf (gethash (gs-robot-pos state) (second tab)) 1))
+  )
+
+(defun is-closed-state (tab state)
+  ;;(or 
+   (generic-map-get tab state)
+;;      (and (gethash (gs-robot-pos state) (second tab))
+;;           (>= (gethash (gs-robot-pos state) (second tab)) ))
+;;      )
+)
+
 (defun do-search (state ;; game-state
                   &key termination-fn
                        estimation-fn
                        continuations-fn)
-    (let ((closed-states     (make-generic-map #'game-state-hash #'game-state-eq))
-          (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b))))))
+    (let ((closed-states     (make-closed-state-table))
+          (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b)))))
+          (visited-positions (make-hash-table :test #'equalp)))
         
         ;; initiate the loop 
-        (setf (gs-estimation state) (funcall estimation-fn state))
+        (setf (gs-estimation state) (funcall estimation-fn state visited-positions))
         (heap-insert open-states state)
         ;;(format t "added initial state: ~A~%" state)
 
@@ -51,7 +73,11 @@
                 ;; check goal
                 (if (funcall termination-fn current)
                     (return-from do-search current)
-                    (generic-map-add closed-states current))
+                    (progn 
+                      (add-closed-state closed-states current)
+                      (if (gethash (gs-robot-pos current) visited-positions)
+                          (incf (gethash (gs-robot-pos current) visited-positions))
+                          (setf (gethash (gs-robot-pos current) visited-positions) 1))))
 
                 (when (= (mod *iters-count* 50) 0)
                      (format t "On iteration ~A, state is ~A~%" *iters-count* current))
@@ -59,8 +85,8 @@
 
                 ;; check continuations
                 (dolist (new-state (funcall continuations-fn current))
-                    (unless (generic-map-get closed-states new-state)
-                        (setf (gs-estimation new-state) (funcall estimation-fn new-state))
+                    (unless (is-closed-state closed-states new-state)
+                        (setf (gs-estimation new-state) (funcall estimation-fn new-state visited-positions))
                         ;;(format t "closed state size: ~A adding new state: ~A~%"
                         ;;          (generic-map-size closed-states) new-state)
                         (heap-insert open-states new-state)))))))

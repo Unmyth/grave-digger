@@ -17,9 +17,13 @@
 ;;            (setf *got-timeout-signal* t))))
                 
 
-(defun max-possible-estimation (game-state)
+(defun max-possible-estimation (game-state visited-positions)
     (let ((max-score (* *total-lambdas* (+ *lift-exit-bonus* *lambda-cost*))))
-        (- max-score (gs-cur-score game-state))))
+      (+ (- max-score (gs-cur-score game-state))
+         (if (and visited-positions
+                  (gethash (gs-robot-pos game-state) visited-positions))
+             (* 500 (gethash (gs-robot-pos game-state) visited-positions))
+             0))))
 
 (defvar *best-state* nil)
 
@@ -35,8 +39,13 @@
 
 (defun produce-continuations (state)
     (unless (is-terminal-state? state) ;; states with 'a in the end do not produce continuations
-        (mapcar (lambda (command) (update-game-state state command))
-                '(l r u d w a))))
+        (append 
+         (if (> (+ (gs-num-beards state) (gs-cur-razors state))
+                0)
+             (list (update-game-state state 's))
+             nil)
+         (mapcar (lambda (command) (update-game-state state command))
+                 '(l r u d w a)))))
 
 (defun play-a-game (initial-state)
     (do-search initial-state :termination-fn #'simple-termination-fn

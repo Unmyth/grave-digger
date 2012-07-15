@@ -48,9 +48,11 @@
                                 state
                                 :termination-fn (lambda (s) (or (equalp (gs-robot-pos s) target)
                                                                 (> iters-num *border-iters-num*)))
-                                :estimation-fn (lambda (s)  (incf iters-num)
-                                                            (+ (max-possible-estimation s)
-                                                               (distance-penalty s path)))
+                                :estimation-fn (lambda (s visited-pos)
+                                                 (declare (ignore visited-pos))
+                                                 (incf iters-num)
+                                                 (+ (max-possible-estimation s nil)
+                                                    (distance-penalty s path)))
                                 :continuations-fn #'produce-continuations ;;TODO remove states too far from path here
                                )))
                         (when target-state
