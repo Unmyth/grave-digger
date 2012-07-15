@@ -74,8 +74,22 @@
       (format t "~A~%Score: ~A~%" (map-to-string (gs-field gs)) 0)
       (read-command gs)))
 
-(defun main-game () (play-a-game (read-initial-state)))
-(defun main-nearest () (play-with-nearest-lambdas (read-initial-state)))
+(defun main-game () 
+  (install-handler)
+  (play-a-game (read-initial-state)))
+
+(defun install-handler ()
+  (sb-sys:enable-interrupt
+   sb-posix:sigint
+   (lambda (signo context info)
+     (declare (ignore signo context info))
+     (setf *got-timeout-signal* t)
+     ;;(format t "Got sigint~%")
+     )))
+
+(defun main-nearest ()
+  (install-handler)
+  (play-with-nearest-lambdas (read-initial-state)))
 ;;(defun main-nearest () (test-routes (read-initial-state)))
 ;;(defun main-nearest () ;;(play-with-nearest-lambdas (read-initial-state)))
 ;;    (let ((h (create-heap #'<)))
