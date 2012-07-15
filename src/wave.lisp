@@ -14,6 +14,18 @@
 (defun at-routes-vector (rv x y)
     (aref (rv-vec rv) (+ (* y (rv-width rv)) x)))
 
+(defun wave-cost (rv x y)
+    (let ((val (at-routes-vector rv x y)))
+        (when val (fp-cost val))))
+
+(defun wave-path (rv pos &optional accum)
+    (if pos
+        (let ((val (at-routes-vector rv (pos-x pos) (pos-y pos))))
+            (if val
+                (wave-path rv (fp-came-from val) (cons pos accum))
+                (cons pos accum)))
+        accum))
+
 (defun routes-vector-from-map (field start-pos)
  (let* ((w         (map-width field))
         (h         (map-height field))
