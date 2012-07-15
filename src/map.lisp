@@ -16,10 +16,10 @@
 
 (defstruct (game-state (:conc-name gs-))
     field
+    (control-points nil)
     (robot-pos nil :type (or nil pos))
     (cur-score 0 :type fixnum)
-    (cur-lambdas 0 :type fixnum)
-    (state 'in-progress) ;; in-progress, win, lost, aborted
+    (cur-lambdas 0 :type fixnum)    (state 'in-progress) ;; in-progress, win, lost, aborted
     need-to-be-updated
     
     ;;Advanced features

@@ -38,6 +38,24 @@
         (mapcar (lambda (command) (update-game-state state command))
                 '(l r u d w a))))
 
+(defun distance (a b)
+	(+ (abs (- (pos-x a) (pos-x b)))
+	   (abs (- (pos-y a) (pos-y b)))))
+
+;; TODO: some normalization here
+(defun control-points-estimation (state)
+    (let* ((points      (gs-control-points state))
+           (next-point  (car points))
+           (rob-pos     (gs-robot-pos state)))
+        (if (null next-point)
+            (let ((max-score (* *total-lambdas* (+ *lift-exit-bonus* *lambda-cost*))))
+                (- max-score (gs-cur-score state)))
+            (if (equal rob-pos next-point)
+                (progn
+                    (pop (gs-control-points state))
+                    (control-points-estimation state))
+                (distance rob-pos next-point)))))
+
 (defun play-a-game (initial-state)
     (do-search initial-state :termination-fn #'simple-termination-fn
                              :continuations-fn #'produce-continuations

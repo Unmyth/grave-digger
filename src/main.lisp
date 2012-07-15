@@ -53,4 +53,14 @@
       (read-command gs)))
 
 (defun main-game () (play-a-game (read-initial-state)))
-(defun main-nearest () (play-with-nearest-lambdas (read-initial-state)))
+(defun main-nearest () (test-routes (read-initial-state)))
+;;(defun main-nearest () ;;(play-with-nearest-lambdas (read-initial-state)))
+;;    (let ((h (create-heap #'<)))
+;;        (labels ((-> (el) (heap-insert h el)
+;;                          (format t "Heap after ~A insert: ~A~%" el h)))
+;;            (-> 10)
+;;            (-> 20)
+;;            (-> 30)
+;;            (loop while (not (heap-empty-p h)) do
+;;                (let ((top (heap-remove h)))
+;;                    (format t "Heap after removal of ~A: ~A~%" top h))))))
