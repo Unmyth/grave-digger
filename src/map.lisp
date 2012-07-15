@@ -1,10 +1,18 @@
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 ;; Symbols:
 ;; robot, wall, rock, lambda, closed-lift, open-lift, earth, space, falling-rock
 (defstruct pos 
   (x 0 :type fixnum) 
   (y 0 :type fixnum))
+
+(defvar *map-water-level* 0)
+(defvar *map-flooding* 0)
+(defvar *map-waterproof* 10)
+
+(defvar *map-trampoline-target* (make-hash-table :test #'eq))
+
+(defvar *map-trampoline-pos* (make-hash-table :test #'eq))
 
 (defstruct (game-state (:conc-name gs-))
     field
@@ -13,6 +21,13 @@
     (cur-score 0 :type fixnum)
     (cur-lambdas 0 :type fixnum)    (state 'in-progress) ;; in-progress, win, lost, aborted
     need-to-be-updated
+    
+    ;;Advanced features
+
+    (water-level 0 :type fixnum)
+    (flooding-counter 0 :type fixnum)
+    (cur-waterproof 0 :type fixnum)
+
     path
     estimation)
 
@@ -105,18 +120,20 @@
 (defun tree-map-node-hash (node)
   (cond ((null node) 0)
         ((symbolp node) (get-symbol-hash node))
+        ((consp node)
+         (* (char-code (elt (symbol-name (cdr node)) 0))
+            128371))
         ((tree-map-node-hash-value node)
          (tree-map-node-hash-value node))
         (t (let ((hash-val 0))
              (dolist (x '(0 1))
                (dolist (y '(0 1))
-                 (declare (type fixnum hash-val x y))
+                 (declare (type fixnum x y))
                  (setf hash-val 
                        (+ hash-val 
-                          (the fixnum
-                            (* (+ (* y 4) (* x 2) 1)
-                               (the fixnum (tree-map-node-hash (aref2x2 (tree-map-node-subnodes node) x y)))))))))
-             (setf hash-val (mod (the fixnum hash-val) (the fixnum +big-prime+)))
+                           (* (+ (* y 4) (* x 2) 1)
+                              (tree-map-node-hash (aref2x2 (tree-map-node-subnodes node) x y)))))))
+             (setf hash-val (mod hash-val (the fixnum +big-prime+)))
              (setf (tree-map-node-hash-value node)
                    hash-val)
              hash-val))))

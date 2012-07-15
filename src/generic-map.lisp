@@ -1,4 +1,4 @@
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defstruct (generic-map (:conc-name gm-)
                         (:constructor mk-generic-map))
