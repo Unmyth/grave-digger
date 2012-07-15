@@ -7,6 +7,8 @@
     (#\R 'robot)
     (#\W 'beard)
     (#\! 'razor)
+    (#\@ 'hor)
+    (#\$ 'falling-hor)
     (#\# 'wall)
     (#\* 'rock)
     (#\\ 'lambda)
@@ -31,6 +33,8 @@
         (robot #\R)
         (wall #\#)
         (rock #\*)
+        (hor #\@)
+        (falling-hor #\$)
         (lambda #\\)
         (closed-lift #\L)
         (open-lift #\O)
@@ -139,7 +143,8 @@
         (w (map-width old-map)))
     (loop for i from 0 to (1- h) do
          (loop for j from 0 to (1- w) do
-              (if (eq (at-pos old-map j i) 'lambda)
+              (if (or (eq (at-pos old-map j i) 'lambda)
+                      (eq (at-pos old-map j i) 'hor))
                   (incf *total-lambdas*))))))
 
 ;; Returned states : in-progress, win, lost, aborted
@@ -189,7 +194,7 @@
                     (values (multi-update old-map 
                                           (pos-x robot-pos) (pos-y robot-pos) 'space
                                           new-x new-y 'robot
-                                          x-offs-2 new-y'rock)
+                                          x-offs-2 new-y map-to-cell)
                             (make-pos :x new-x :y new-y)
                             (1- cur-score)
                             cur-lamdas
@@ -260,61 +265,80 @@
   (heap-insert heap (make-pos :x (1- x) :y (1+ y)))
   (heap-insert heap (make-pos :x (1+ x) :y (1+ y))))
 
+(defun make-falling (val below)
+  (case val
+    ((rock
+      falling-rock) (case below
+                     ((space robot) 'falling-rock)
+                     (otherwise 'rock)))
+    ((hor
+      falling-rock) (case below
+                     ((space robot) 'falling-hor)
+                     (otherwise 'lambda)))))
+
+(defun end-fall (val)
+  (case val
+    (rock 'rock)
+    (hor 'hor)
+    (falling-rock 'rock)
+    (falling-hor 'lambda)))
+
 (defun update-cell (old-map new-map i j no-more-lambdas need-to-be-updated need-beard-update beard-list)
-  (cond ((is-rock (at-pos old-map j i))
-         (cond
-           ((eq (at-pos old-map j (1- i)) 'space)
-            (let ((tmp-map (update new-map j i 'space)))
-              (add-to-heap-around-cell need-to-be-updated j i)
-              (heap-insert need-to-be-updated (make-pos :x j :y (1- i)))
-              (update tmp-map j (1- i) 'falling-rock)))
-           ((and (is-rock (at-pos old-map j (1- i)))
-                 (eq (at-pos old-map (1+ j) i) 'space)
-                 (eq (at-pos old-map (1+ j) (1- i)) 'space))
-            (let ((tmp-map (update new-map j i 'space)))
-              (add-to-heap-around-cell need-to-be-updated j i)
-              (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
-              (update tmp-map (1+ j) (1- i) 'falling-rock)))
-           ((and (is-rock (at-pos old-map j (1- i)))
-                 (eq (at-pos old-map (1- j) i) 'space)
-                 (eq (at-pos old-map (1- j) (1- i)) 'space))
-            (let ((tmp-map (update new-map j i 'space)))
-              (add-to-heap-around-cell need-to-be-updated j i)
-              (heap-insert need-to-be-updated (make-pos :x (1- j) :y (1- i)))
-              (update tmp-map (1- j) (1- i) 'falling-rock)))
-           ((and (eq (at-pos old-map j (1- i)) 'lambda)
-                 (eq (at-pos old-map (1+ j) i) 'space)
-                 (eq (at-pos old-map (1+ j) (1- i)) 'space))
-            (let ((tmp-map (update new-map j i 'space)))
-              (add-to-heap-around-cell need-to-be-updated j i)
-              (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
-              (update tmp-map (1+ j) (1- i) 'falling-rock)))
-           (t (update new-map j i 'rock))))
-        ((eq (at-pos old-map j i) 'closed-lift)
-         (heap-insert need-to-be-updated (make-pos :x j :y i))
-         (if no-more-lambdas
-             (update new-map j i 'open-lift)
-             new-map))
-        ((and need-beard-update
-              (eq (at-pos old-map j i) 'beard))
-         (push (make-pos :x j :y i)
-               (car beard-list))
-         (dolist (dy '(-1 0 1))
-           (dolist (dx '(-1 0 1))
-             (let ((x (+ j dx))
-                   (y (+ i dy)))
-               (when (and (eq 
-                           (at-pos old-map x y)
-                           'space)
-                          (not (eq 
-                                (at-pos new-map x y)
-                                'beard)))
-                 (incf (cdr beard-list))
-                 (push (make-pos :x x :y y)
-                       (car beard-list))
-                 (setf new-map (update new-map x y 'beard))))))
-         new-map)
-        (t new-map)))
+  (let ((map-cell (at-pos old-map j i)))
+    (cond ((is-rock map-cell)
+           (cond
+             ((eq (at-pos old-map j (1- i)) 'space)
+              (let ((tmp-map (update new-map j i 'space)))
+                (add-to-heap-around-cell need-to-be-updated j i)
+                (heap-insert need-to-be-updated (make-pos :x j :y (1- i)))
+                (update tmp-map j (1- i) (make-falling map-cell (at-pos old-map j (- i 2))))))
+             ((and (is-rock (at-pos old-map j (1- i)))
+                   (eq (at-pos old-map (1+ j) i) 'space)
+                   (eq (at-pos old-map (1+ j) (1- i)) 'space))
+              (let ((tmp-map (update new-map j i 'space)))
+                (add-to-heap-around-cell need-to-be-updated j i)
+                (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
+                (update tmp-map (1+ j) (1- i) (make-falling map-cell (at-pos old-map (1+ j) (- i 2))))))
+             ((and (is-rock (at-pos old-map j (1- i)))
+                   (eq (at-pos old-map (1- j) i) 'space)
+                   (eq (at-pos old-map (1- j) (1- i)) 'space))
+              (let ((tmp-map (update new-map j i 'space)))
+                (add-to-heap-around-cell need-to-be-updated j i)
+                (heap-insert need-to-be-updated (make-pos :x (1- j) :y (1- i)))
+                (update tmp-map (1- j) (1- i) (make-falling map-cell (at-pos old-map (1- j) (- i 2))))))
+             ((and (eq (at-pos old-map j (1- i)) 'lambda)
+                   (eq (at-pos old-map (1+ j) i) 'space)
+                   (eq (at-pos old-map (1+ j) (1- i)) 'space))
+              (let ((tmp-map (update new-map j i 'space)))
+                (add-to-heap-around-cell need-to-be-updated j i)
+                (heap-insert need-to-be-updated (make-pos :x (1+ j) :y (1- i)))
+                (update tmp-map (1+ j) (1- i) (make-falling map-cell (at-pos old-map (1+ j) (- i 2))))))
+             (t (update new-map j i (end-fall map-cell)))))
+          ((eq map-cell 'closed-lift)
+           (heap-insert need-to-be-updated (make-pos :x j :y i))
+           (if no-more-lambdas
+               (update new-map j i 'open-lift)
+               new-map))
+          ((and need-beard-update
+                (eq map-cell 'beard))
+           (push (make-pos :x j :y i)
+                 (car beard-list))
+           (dolist (dy '(-1 0 1))
+             (dolist (dx '(-1 0 1))
+               (let ((x (+ j dx))
+                     (y (+ i dy)))
+                 (when (and (eq 
+                             (at-pos old-map x y)
+                             'space)
+                            (not (eq 
+                                  (at-pos new-map x y)
+                                  'beard)))
+                   (incf (cdr beard-list))
+                   (push (make-pos :x x :y y)
+                         (car beard-list))
+                   (setf new-map (update new-map x y 'beard))))))
+           new-map)
+          (t new-map))))
 
 (defun quick-update-map (map old-need-to-be-updated no-more-lambdas need-beard-update num-beards)
   (let ((new-need-to-be-updated (create-heap #'need-to-be-updated-heap-lambda))
@@ -362,10 +386,12 @@
     heap))
 
 (defun have-lost (the-map robot-pos)
-  (eq (at-pos the-map 
+  (case (at-pos the-map 
               (pos-x robot-pos)
               (1+ (pos-y robot-pos)))
-      'falling-rock))
+      ((falling-rock
+        falling-hor) t)
+      (otherwise nil)))
 
 (defun is-under-water (water-level robot-pos)
   (<= (pos-y robot-pos)

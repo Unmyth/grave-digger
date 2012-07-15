@@ -41,7 +41,9 @@
 
 (defun is-rock (sym)
   (or (eq sym 'rock)
-      (eq sym 'falling-rock)))
+      (eq sym 'falling-rock)
+      (eq sym 'hor)
+      (eq sym 'falling-hor)))
 
 (defclass a-map ()
   ((width :accessor map-width
