@@ -1,8 +1,12 @@
-default: lifter
+default: lifter lifter-interactive lifter-n
 
-lifter lifter-interactive lifter-n:
-	sbcl --non-interactive --load src/compile.lisp
+lifter:
 	sbcl --non-interactive --load src/compile-game.lisp
+
+lifter-interactive:
+	sbcl --non-interactive --load src/compile.lisp
+
+lifter-n:
 	sbcl --non-interactive --load src/compile-nearest.lisp
 
 clean:
