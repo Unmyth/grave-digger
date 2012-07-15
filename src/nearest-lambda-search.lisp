@@ -73,9 +73,4 @@
 		lambdas))
 
 (defun play-with-nearest-lambdas (state)
-    (nearest-lambda-iteration state (get-lambda-positions state))
-    (let ((final-state (or *best-state* state)))
-        (format t "Final path: ~A~%Final state: ~A~%Final score:~A~%"
-            (make-path-string final-state)
-            final-state
-            (compute-state-score final-state))))
+    (nearest-lambda-iteration state (get-lambda-positions state)))
