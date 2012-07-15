@@ -71,7 +71,8 @@
 
             (let ((current (heap-remove open-states)))
                 ;; check goal
-                (if (funcall termination-fn current)
+                (if (or (funcall termination-fn current)
+                        *got-timeout-signal*)
                     (return-from do-search current)
                     (progn 
                       (add-closed-state closed-states current)

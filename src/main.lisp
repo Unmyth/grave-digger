@@ -88,6 +88,7 @@
      )))
 
 (defun main-nearest ()
+  ;;(test-routes (read-initial-state)))
   (install-handler)
   (play-with-nearest-lambdas (read-initial-state)))
 ;;(defun main-nearest () (test-routes (read-initial-state)))

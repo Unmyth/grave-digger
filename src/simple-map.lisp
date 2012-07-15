@@ -444,7 +444,12 @@
                                          (1- (gs-flooding-counter gs))))
                (new-growth (if (= (gs-cur-growth gs) 1)
                                *map-growth*
-                               (1- (gs-cur-growth gs)))))
+                               (1- (gs-cur-growth gs))))
+               (new-stones (if (is-rock (at-pos (gs-field gs) 
+                                                (pos-x (gs-robot-pos gs))
+                                                (pos-y (gs-robot-pos gs))))
+                               (1+ (gs-moved-stones gs))
+                               (gs-moved-stones gs))))
           (make-game-state :field new-map-2;;alternative-state
                            :robot-pos new-robot-pos
                            :cur-score new-score
@@ -452,6 +457,8 @@
                            :state new-state
                            :need-to-be-updated new-need-to-be-updated
                            :path (cons command (gs-path gs))
+                           
+                           :moved-stones new-stones
                            
                            :water-level new-water-level
                            :cur-waterproof new-waterproof

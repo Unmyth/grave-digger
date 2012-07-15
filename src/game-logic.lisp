@@ -19,10 +19,11 @@
 
 (defun max-possible-estimation (game-state visited-positions)
     (let ((max-score (* *total-lambdas* (+ *lift-exit-bonus* *lambda-cost*))))
-      (+ (- max-score (gs-cur-score game-state))
+      (+ (- max-score (gs-cur-score game-state)
+            (* 0 (gs-moved-stones game-state)))
          (if (and visited-positions
                   (gethash (gs-robot-pos game-state) visited-positions))
-             (* 500 (gethash (gs-robot-pos game-state) visited-positions))
+             (* 0 (gethash (gs-robot-pos game-state) visited-positions))
              0))))
 
 (defvar *best-state* nil)

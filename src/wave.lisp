@@ -2,9 +2,16 @@
     came-from
     cost)
 
-(defun move-pos (pos dx dy)
-    (make-pos :x (+ (pos-x pos) dx)
-              :y (+ (pos-y pos) dy)))
+(defun move-pos (field pos dx dy)
+  (let* ((new-pos (make-pos :x (+ (pos-x pos) dx)
+                            :y (+ (pos-y pos) dy)))
+         (cell (at-pos field (pos-x new-pos) (pos-y new-pos))))
+    (if (and (consp cell)
+             (eq (car cell) 'trampoline))
+        (gethash 
+         (gethash (cdr cell) *map-trampoline-target*)
+         *map-trampoline-pos*)
+        new-pos)))
 
 (defstruct (routes-vector (:conc-name rv-))
     vec
@@ -40,7 +47,7 @@
              (dolist (delta '((1 . 0) (0 . 1) (-1 . 0) (0 . -1)))
               (let* ((dx (car delta))
                      (dy (cdr delta))
-                     (new-pos (move-pos point dx dy))
+                     (new-pos (move-pos field point dx dy))
                      (new-cost (1+ (fp-cost (@* point)))))
                 (unless (or (>= (pos-x new-pos) w)
                             (< (pos-x new-pos) 0)

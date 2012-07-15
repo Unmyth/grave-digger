@@ -36,6 +36,7 @@
     (cur-razors 0 :type fixnum)
     possible-beards
 
+    (moved-stones 0 :type fixnum)
     path
     estimation)
 
