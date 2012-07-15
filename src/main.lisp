@@ -75,7 +75,8 @@
       (read-command gs)))
 
 (defun main-game () (play-a-game (read-initial-state)))
-(defun main-nearest () (test-routes (read-initial-state)))
+(defun main-nearest () (play-with-nearest-lambdas (read-initial-state)))
+;;(defun main-nearest () (test-routes (read-initial-state)))
 ;;(defun main-nearest () ;;(play-with-nearest-lambdas (read-initial-state)))
 ;;    (let ((h (create-heap #'<)))
 ;;        (labels ((-> (el) (heap-insert h el)

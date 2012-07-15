@@ -1,34 +1,59 @@
 ;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
-(defun find-path (state pos)
-	(do-search state :termination-fn (lambda (s) (equalp (gs-robot-pos s) pos))
-					 :continuations-fn #'produce-continuations
-					 :estimation-fn (lambda (s) (distance (gs-robot-pos s) pos))))
+(defun distance (a b)
+	(+ (abs (- (pos-x a) (pos-x b)))
+	   (abs (- (pos-y a) (pos-y b)))))
 
-(defun find-nearest-lambda (state lambdas)
-	(let ((rp (gs-robot-pos state))
-		  (nearest-dist nil)
-		  (nearest nil))
-		(dolist (p lambdas)
-			(let ((p-dist (distance p rp)))
-				(when (or (null nearest-dist)
-					  	  (< p-dist nearest-dist))
-					(setf nearest-dist p-dist
-						  nearest p))))
-		nearest))
+;; TODO: some normalization here
+;;(defun control-points-estimation (state)
+;;    (let* ((points      (gs-control-points state))
+;;           (next-point  (car points))
+;;           (rob-pos     (gs-robot-pos state)))
+;;        (if (null next-point)
+;;            (let ((max-score (* *total-lambdas* (+ *lift-exit-bonus* *lambda-cost*))))
+;;                (- max-score (gs-cur-score state)))
+;;            (if (equal rob-pos next-point)
+;;                (progn
+;;                    (pop (gs-control-points state))
+;;                    (control-points-estimation state))
+;;                (distance rob-pos next-point)))))
+
+(defmacro aif (cond true false)
+    `(let ((it ,cond))
+        ,true
+        ,false))
+
+(defvar *very-big-cost* 9999999)
+
+(defun distance-from-path (pos path)
+    (car (sort (mapcar (lambda (p) (distance pos p)) path ) #'<)))
+
+(defun distance-penalty (state path)
+    (* 2 (distance-from-path (gs-robot-pos state) path)))
 
 (defun nearest-lambda-iteration (state lambdas)
-	(format t "Iteration on state: ~A" state)
-	(if lambdas
-		(let* ((nearest (find-nearest-lambda state lambdas))
-			   (rest    (remove nearest lambdas)))
-			(if (eq (at-pos (gs-field state) (pos-x nearest) (pos-y nearest)) 'lambda)
-				(let ((new-state (find-path state nearest)))
-					(if new-state
-						(nearest-lambda-iteration new-state rest)
-						(nearest-lambda-iteration state rest)))
-				(nearest-lambda-iteration state rest)))
-		state))
+	(format t "nearest-lambda-iteration on state: ~A" state)
+    (if lambdas
+        (let* ((wave (routes-vector-from-map (gs-field state) (gs-robot-pos state)))
+               (sorted-lambdas (sort lambdas #'< :key (lambda (pos) (aif (wave-cost wave (pos-x pos) (pos-y pos)) it *very-big-cost*)))))
+          (some (lambda (target)
+                    ;; todo: check that lambda still exists
+                    (let* ((rest-of-lambdas (remove target lambdas))
+                           (path (wave-path wave target))
+                           (target-state
+                             (do-search
+                                state
+                                :termination-fn (lambda (s) (equalp (gs-robot-pos s) target))
+                                :estimation-fn (lambda (s) (+ (max-possible-estimation s)
+                                                              (distance-penalty s path)))
+                                :continuations-fn #'produce-continuations ;;TODO remove states too far from path here
+                               )))
+                        (when target-state
+                            (if rest-of-lambdas
+                                (nearest-lambda-iteration target-state rest-of-lambdas)
+                                target-state))))
+                sorted-lambdas))
+        state))
 
 (defun get-lambda-positions (state)
 	(let* ((f (gs-field state))
