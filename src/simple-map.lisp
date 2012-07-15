@@ -1,6 +1,7 @@
 ;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defvar *total-lambdas*)
+(defvar *lift-pos*)
 
 (defun char-to-symbol (chr)
   (case chr
@@ -143,9 +144,13 @@
         (w (map-width old-map)))
     (loop for i from 0 to (1- h) do
          (loop for j from 0 to (1- w) do
-              (if (or (eq (at-pos old-map j i) 'lambda)
-                      (eq (at-pos old-map j i) 'hor))
-                  (incf *total-lambdas*))))))
+           (let ((s (at-pos old-map j i)))
+            (case s
+              ((closed-lift open-lift)
+                (setf *lift-pos* (make-pos :x j :y i)))
+              ((lambda hor)
+                (incf *total-lambdas*))))
+           ))))
 
 ;; Returned states : in-progress, win, lost, aborted
 
