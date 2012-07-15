@@ -5,14 +5,25 @@
      (+ (tree-map-hash (gs-field gs))
         (* (gs-water-level gs) 2191)
         (* (gs-flooding-counter gs) 123)
-        (* (gs-cur-waterproof gs) 7))
+        (* (gs-cur-waterproof gs) 7)
+        (* (gs-cur-razors gs) 1231)
+        (if (= 0 (gs-num-beards gs))
+            0
+            (* (gs-cur-growth gs)
+               6567)))
      +big-prime+))
 
 (defun game-state-eq (a b)
     (and (tree-map-equals (gs-field a) (gs-field b))
          (= (gs-water-level a) (gs-water-level b))
          (= (gs-flooding-counter a) (gs-flooding-counter b))
-         (= (gs-cur-waterproof a) (gs-cur-waterproof b))))
+         (= (gs-cur-waterproof a) (gs-cur-waterproof b))
+         (= (gs-cur-razors a) (gs-cur-razors b))
+         (if (and (= 0 (gs-num-beards a))
+                  (= 0 (gs-num-beards b)))
+            t
+            (= (gs-cur-growth a)
+               (gs-cur-growth b)))))
 
 (defvar *iters-count* 0)
 

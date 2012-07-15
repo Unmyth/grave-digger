@@ -16,6 +16,20 @@
                     (setf (gethash (cdr val) *map-trampoline-pos*)
                           (make-pos :x x :y y))))))))
 
+(defun count-beards (map)
+  (let ((h (map-height map))
+        (w (map-width map))
+        (num-beards 0)
+        (lst nil))
+    (loop for y from 0 to (1- h) do
+          (loop for x from 0 to (1- w) do
+                (when (eq (at-pos map x y)
+                          'beard)
+                  (incf num-beards)
+                  (push (make-pos :x x :y y)
+                        lst))))
+    (values num-beards lst)))
+
 (defun read-trampolines (data)
   (mapc
    (lambda (trampoline)
@@ -29,6 +43,8 @@
   (read-meta-value *map-water-level* water)
   (read-meta-value *map-flooding* flooding)
   (read-meta-value *map-waterproof* waterproof)
+  (read-meta-value *map-growth* growth)
+  (read-meta-value *map-razors* razors)
   (read-trampolines (remove-if-not (lambda (val)
                                      (eq (car val) 'trampoline))
                                    *map-metadata*)))
@@ -37,14 +53,20 @@
     (multiple-value-bind (field rob-pos) (map-from-stdio)
       (find-trampolines field)
       (interpret-metadata)
-      (make-game-state 
-       :field field
-       :need-to-be-updated (init-need-to-be-updated field)
-       :robot-pos rob-pos
+      (multiple-value-bind (num-beards beard-list) (count-beards field)
+        (make-game-state 
+         :field field
+         :need-to-be-updated (init-need-to-be-updated field)
+         :robot-pos rob-pos
 
-       :water-level (+ *map-water-level* 1)
-       :flooding-counter *map-flooding*
-       :cur-waterproof *map-waterproof*)))
+         :water-level (+ *map-water-level* 1)
+         :flooding-counter *map-flooding*
+         :cur-waterproof *map-waterproof*
+         
+         :num-beards num-beards
+         :cur-growth *map-growth*
+         :cur-razors *map-razors*
+         :possible-beards beard-list))))
 
 
 (defun main-manual ()

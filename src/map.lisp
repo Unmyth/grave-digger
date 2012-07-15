@@ -14,6 +14,9 @@
 
 (defvar *map-trampoline-pos* (make-hash-table :test #'eq))
 
+(defvar *map-growth* 25)
+(defvar *map-razors* 0)
+
 (defstruct (game-state (:conc-name gs-))
     field
     (control-points nil)
@@ -27,13 +30,20 @@
     (water-level 0 :type fixnum)
     (flooding-counter 0 :type fixnum)
     (cur-waterproof 0 :type fixnum)
+    
+    (num-beards 0 :type fixnum)
+    (cur-growth 0 :type fixnum)
+    (cur-razors 0 :type fixnum)
+    possible-beards
 
     path
     estimation)
 
 (defun is-rock (sym)
   (or (eq sym 'rock)
-      (eq sym 'falling-rock)))
+      (eq sym 'falling-rock)
+      (eq sym 'hor)
+      (eq sym 'falling-hor)))
 
 (defclass a-map ()
   ((width :accessor map-width
