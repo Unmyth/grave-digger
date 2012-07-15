@@ -1,7 +1,3 @@
-(defun distance (a b)
-	(+ (abs (- (pos-x a) (pos-x b)))
-	   (abs (- (pos-y a) (pos-y b)))))
-
 (defun find-path (state pos)
 	(do-search state :termination-fn (lambda (s) (equalp (gs-robot-pos s) pos))
 					 :continuations-fn #'produce-continuations

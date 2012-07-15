@@ -6,6 +6,7 @@
 (defstruct (game-state (:conc-name gs-))
     field
     robot-pos
+    (control-points nil)
     (cur-score 0)
     (cur-lambdas 0)
     (state 'in-progress) ;; in-progress, win, lost, aborted
