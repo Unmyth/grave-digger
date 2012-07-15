@@ -1,3 +1,5 @@
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
+
 (defun game-state-hash (gs)
     (tree-map-hash (gs-field gs)))
 
@@ -33,7 +35,8 @@
                     (generic-map-add closed-states current))
 
                 (when (= (mod *iters-count* 50) 0)
-                    (format t "On iteration ~A, state is ~A~%" *iters-count* current))  
+                     (format t "On iteration ~A, state is ~A~%" *iters-count* current))
+                
 
                 ;; check continuations
                 (dolist (new-state (funcall continuations-fn current))

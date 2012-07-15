@@ -20,6 +20,7 @@
 ;;; Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 ;;; Boston, MA 02111-1307 USA
 ;;;
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defstruct heap
   less-fn
@@ -79,7 +80,7 @@ be a list or NIL."
   (make-heap
     :less-fn (heap-less-fn heap)
 ;;    :a (copy-seq (heap-a heap))
-    :a (make-array (length (heap-a heap)) :initial-contents (heap-a heap) :adjustable t :fill-pointer (1- (length (heap-a heap))))
+    :a (make-array (length (heap-a heap)) :initial-contents (heap-a heap) :adjustable t :fill-pointer (length (heap-a heap)))
     :order (heap-order heap)
     :max-count (heap-max-count heap)))
 
