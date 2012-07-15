@@ -1,3 +1,5 @@
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
+
 (defun game-state-hash (gs)
     (tree-map-hash (gs-field gs)))
 

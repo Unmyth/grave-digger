@@ -1,3 +1,5 @@
+(declaim (optimize (speed 3) (safety 0) (debug 0)))
+
 (defvar *total-lambdas*)
 
 (defun char-to-symbol (chr)
