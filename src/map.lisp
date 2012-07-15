@@ -10,6 +10,10 @@
 (defvar *map-flooding* 0)
 (defvar *map-waterproof* 10)
 
+(defvar *map-trampoline-target* (make-hash-table :test #'eq))
+
+(defvar *map-trampoline-pos* (make-hash-table :test #'eq))
+
 (defstruct (game-state (:conc-name gs-))
     field
     (robot-pos nil :type (or nil pos))
@@ -116,6 +120,9 @@
 (defun tree-map-node-hash (node)
   (cond ((null node) 0)
         ((symbolp node) (get-symbol-hash node))
+        ((consp node)
+         (* (char-code (elt (symbol-name (cdr node)) 0))
+            128371))
         ((tree-map-node-hash-value node)
          (tree-map-node-hash-value node))
         (t (let ((hash-val 0))

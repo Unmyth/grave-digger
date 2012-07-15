@@ -12,11 +12,19 @@
     (#\O 'open-lift)
     (#\. 'earth)
     (#\Space 'space)
-    (#\@ 'falling-rock)
-    (otherwise (error "wrong character"))))
+    (#\^ 'falling-rock)
+    (otherwise 
+     (cond ((and (char>= chr #\A)
+                 (char<= chr #\I))
+            (cons 'trampoline (intern (string chr))))
+           ((and (char>= chr #\1)
+                 (char<= chr #\9))
+            (cons 'target (intern (string chr))))
+           (t (error "wrong character"))))))
 
 (defun symbol-to-char (sym)
-  (if sym
+  (if (and sym
+           (symbolp sym))
       (case sym
         (robot #\R)
         (wall #\#)
@@ -26,9 +34,12 @@
         (open-lift #\O)
         (earth #\.)
         (space #\Space)
-        (falling-rock #\@)
+        (falling-rock #\^)
         (otherwise (error "wrong symbol")))
-      #\Space))
+      (if (and sym
+               (consp sym))
+          (elt (symbol-name (cdr sym)) 0)
+          #\Space)))
 
 (defun make-path-string (state)
     (apply #'concatenate 'string (mapcar #'symbol-name (reverse (gs-path state)))))
@@ -132,21 +143,22 @@
         ((eq command 'a)
          (values old-map robot-pos (+ cur-score (* 25 cur-lamdas))
                  cur-lamdas 'aborted))
-        (t (let ((new-x (case command
-                          (l (1- (pos-x robot-pos)))
-                          (r (1+ (pos-x robot-pos)))
-                          (otherwise (pos-x robot-pos))))
-                 (x-offs-2 (case command
-                             (l (- (pos-x robot-pos) 2))
-                             (r (+ (pos-x robot-pos) 2))))
-                 (new-y (case command
-                          (d (1- (pos-y robot-pos)))
-                          (u (1+ (pos-y robot-pos)))
-                          (otherwise (pos-y robot-pos)))))
+        (t (let* ((new-x (case command
+                           (l (1- (pos-x robot-pos)))
+                           (r (1+ (pos-x robot-pos)))
+                           (otherwise (pos-x robot-pos))))
+                  (x-offs-2 (case command
+                              (l (- (pos-x robot-pos) 2))
+                              (r (+ (pos-x robot-pos) 2))))
+                  (new-y (case command
+                           (d (1- (pos-y robot-pos)))
+                           (u (1+ (pos-y robot-pos)))
+                           (otherwise (pos-y robot-pos))))
+                  (map-to-cell (at-pos old-map new-x new-y)))
              (cond ((and
                      (or (eq command 'l)
                          (eq command 'r))
-                     (is-rock (at-pos old-map new-x new-y))
+                     (is-rock map-to-cell)
                      (eq (at-pos old-map x-offs-2 new-y)
                          'space))
                     (add-to-heap-around-cell need-to-be-updated x-offs-2 new-y)
@@ -160,7 +172,7 @@
                             (1- cur-score)
                             cur-lamdas
                             'in-progress))
-                   ((eq (at-pos old-map new-x new-y)
+                   ((eq map-to-cell
                         'open-lift)
                     (values (multi-update old-map 
                                           (pos-x robot-pos) (pos-y robot-pos) 'space
@@ -169,7 +181,7 @@
                             (+ cur-score (* 50 cur-lamdas) -1) 
                             cur-lamdas
                             'win))
-                   ((case (at-pos old-map new-x new-y)
+                   ((case map-to-cell
                       ((space earth lambda) t)
                       (otherwise nil))
                     (let ((lambda-coef (if (eq (at-pos old-map new-x new-y) 'lambda)
@@ -183,6 +195,27 @@
                               (make-pos :x new-x :y new-y)
                               (1- (+ cur-score (* 25 lambda-coef)))
                               (+ lambda-coef cur-lamdas)
+                              'in-progress)))
+                   ((and (consp map-to-cell)
+                         (eq (car map-to-cell)
+                             'trampoline))
+                    (let* ((target-val (gethash (cdr map-to-cell) *map-trampoline-target*))
+                           (target-pos (gethash target-val *map-trampoline-pos*))
+                           (all-trampolines (gethash target-val *map-trampoline-target*))
+                           (new-map (update old-map
+                                            (pos-x robot-pos) (pos-y robot-pos) 'space)))
+                      (format t "Teleporting from ~A to ~A at pos ~A, additional ~A~%" (cdr map-to-cell) target-val target-pos all-trampolines)
+                      (add-to-heap-around-cell need-to-be-updated (pos-x target-pos) (pos-y target-pos))
+                      (add-to-heap-around-cell need-to-be-updated (pos-x robot-pos) (pos-y robot-pos))
+                      (loop for tr in all-trampolines
+                           do (let ((tr-pos (gethash tr *map-trampoline-pos*)))
+                                (add-to-heap-around-cell need-to-be-updated (pos-x tr-pos) (pos-y tr-pos))
+                                (setf new-map (update new-map (pos-x tr-pos) (pos-y tr-pos) 'space))))
+                      (values (multi-update new-map 
+                                            (pos-x target-pos) (pos-y target-pos) 'robot)
+                              target-pos
+                              (1- cur-score)
+                              cur-lamdas
                               'in-progress)))
                    (t (update-robot old-map robot-pos 'w cur-score cur-lamdas need-to-be-updated)))))))
 
