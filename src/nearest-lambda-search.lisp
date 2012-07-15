@@ -33,22 +33,6 @@
 
 (defvar *border-iters-num* 20000)
 
-(defun compute-state-score (state)
-  (let* ((score (gs-cur-score state))
-         (lambdas (gs-cur-lambdas state))
-         (bonus (case (gs-state state)
-                  ;;((win) (* lambdas *lift-exit-bonus*))
-                  ((in-progress aborted) (* lambdas *abort-exit-bonus*))
-                  (t 0))))
-    (+ score bonus)))
-
-(defun check-best-state (state)
-    (when (and (not (eq (gs-state state) 'lost))
-               (or (null *best-state*)
-                   (> (compute-state-score state)
-                      (compute-state-score *best-state*)))) ;;TODO check that bonuses are computed
-        (setf *best-state* state)))
-
 (defun nearest-lambda-iteration (state lambdas)
   (let* ((wave (routes-vector-from-map (gs-field state) (gs-robot-pos state)))
          (sorted-lambdas (sort lambdas #'< :key (lambda (pos) (aif (wave-cost wave (pos-x pos) (pos-y pos)) it *very-big-cost*)))))

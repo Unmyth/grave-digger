@@ -1,10 +1,7 @@
 (defvar *lambda-cost* 25)
 (defvar *lift-exit-bonus* 50)
-(defvar *abort-exit-bonus* 25)
 
 ;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
-
-(defvar *got-timeout-signal* nil)
 
 ;;(require :sb-posix)
 ;;(require :sb-sys)
@@ -25,8 +22,6 @@
                   (gethash (gs-robot-pos game-state) visited-positions))
              (* 0 (gethash (gs-robot-pos game-state) visited-positions))
              0))))
-
-(defvar *best-state* nil)
 
 (defun is-winning-state? (state) (case (gs-state state) (win t)))
 (defun is-terminal-state? (state) (case (gs-state state) ((aborted win lost) t)))

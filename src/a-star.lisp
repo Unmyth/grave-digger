@@ -25,6 +25,10 @@
             (= (gs-cur-growth a)
                (gs-cur-growth b)))))
 
+
+(defvar *got-timeout-signal* nil)
+(defvar *abort-exit-bonus* 25)
+
 (defvar *iters-count* 0)
 
 (defun make-closed-state-table ()
@@ -48,6 +52,24 @@
 ;;      )
 )
 
+(defvar *best-state* nil)
+
+(defun compute-state-score (state)
+  (let* ((score (gs-cur-score state))
+         (lambdas (gs-cur-lambdas state))
+         (bonus (case (gs-state state)
+                  ;;((win) (* lambdas *lift-exit-bonus*))
+                  (in-progress (* lambdas *abort-exit-bonus*))
+                  (t 0))))
+    (+ score bonus)))
+
+(defun check-best-state (state)
+    (when (and (not (eq (gs-state state) 'lost))
+               (or (null *best-state*)
+                   (> (compute-state-score state)
+                      (compute-state-score *best-state*)))) ;;TODO check that bonuses are computed
+        (setf *best-state* state)))
+
 (defun do-search (state ;; game-state
                   &key termination-fn
                        estimation-fn
@@ -69,16 +91,23 @@
             (when (heap-empty-p open-states)
                 (return-from do-search nil))
 
+            (when (>= (+ (generic-map-size closed-states)
+                         (heap-count open-states))
+                      500000)
+              (return-from do-search nil))
+
             (let ((current (heap-remove open-states)))
+                (check-best-state current)
                 ;; check goal
-                (if (or (funcall termination-fn current)
-                        *got-timeout-signal*)
+                (if (funcall termination-fn current)
                     (return-from do-search current)
-                    (progn 
-                      (add-closed-state closed-states current)
-                      (if (gethash (gs-robot-pos current) visited-positions)
-                          (incf (gethash (gs-robot-pos current) visited-positions))
-                          (setf (gethash (gs-robot-pos current) visited-positions) 1))))
+                    (if *got-timeout-signal*
+                        (return-from do-search nil)
+                        (progn 
+                          (add-closed-state closed-states current)
+                          (if (gethash (gs-robot-pos current) visited-positions)
+                              (incf (gethash (gs-robot-pos current) visited-positions))
+                              (setf (gethash (gs-robot-pos current) visited-positions) 1)))))
 
                 (when (= (mod *iters-count* 500) 0)
                      (format t "On iteration ~A, state is ~A~%" *iters-count* current))

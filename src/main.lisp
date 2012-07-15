@@ -68,15 +68,23 @@
          :cur-razors *map-razors*
          :possible-beards beard-list))))
 
+(defun main (fn)
+  (let ((state (read-initial-state)))
+    (install-handler)
+    (funcall fn state)
+    (let ((final-state (or *best-state* state)))
+      (format t "Final path: ~A~%Final state: ~A~%Final score:~A~%"
+              (make-path-string final-state)
+              final-state
+              (compute-state-score final-state)))))
+
 
 (defun main-manual ()
     (let ((gs (read-initial-state)))
       (format t "~A~%Score: ~A~%" (map-to-string (gs-field gs)) 0)
       (read-command gs)))
 
-(defun main-game () 
-  (install-handler)
-  (play-a-game (read-initial-state)))
+(defun main-game () (main #'play-a-game))
 
 (defun install-handler ()
   (sb-sys:enable-interrupt
@@ -89,8 +97,7 @@
 
 (defun main-nearest ()
   ;;(test-routes (read-initial-state)))
-  (install-handler)
-  (play-with-nearest-lambdas (read-initial-state)))
+  (main #'play-with-nearest-lambdas))
 ;;(defun main-nearest () (test-routes (read-initial-state)))
 ;;(defun main-nearest () ;;(play-with-nearest-lambdas (read-initial-state)))
 ;;    (let ((h (create-heap #'<)))
