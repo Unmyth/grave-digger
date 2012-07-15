@@ -4,7 +4,7 @@
 
 ;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
-;;(defvar *got-timeout-signal* nil)
+(defvar *got-timeout-signal* nil)
 
 ;;(require :sb-posix)
 ;;(require :sb-sys)

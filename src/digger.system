@@ -1,4 +1,5 @@
 (asdf::defsystem :digger
+    :depends-on (sb-posix)
     :components (
                  (:file "generic-map")
                  (:file "heap")
