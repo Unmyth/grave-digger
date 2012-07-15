@@ -108,7 +108,8 @@
                (dolist (y '(0 1))
                  (setf hash-val 
                        (+ hash-val 
-                          (tree-map-node-hash (aref2x2 (tree-map-node-subnodes node) x y))))))
+                          (* (+ (* y 4) (* x 2) 1)
+                             (tree-map-node-hash (aref2x2 (tree-map-node-subnodes node) x y)))))))
              (setf hash-val (mod hash-val +big-prime+))
              (setf (tree-map-node-hash-value node)
                    hash-val)

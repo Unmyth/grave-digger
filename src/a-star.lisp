@@ -33,7 +33,8 @@
                     (generic-map-add closed-states current))
 
                 (when (= (mod *iters-count* 50) 0)
-                    (format t "On iteration ~A, state is ~A~%" *iters-count* current))  
+                     (format t "On iteration ~A, state is ~A~%" *iters-count* current))
+                
 
                 ;; check continuations
                 (dolist (new-state (funcall continuations-fn current))
