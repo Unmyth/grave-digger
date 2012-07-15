@@ -8,7 +8,6 @@
 
 (defstruct (game-state (:conc-name gs-))
     field
-    robot-pos
     (control-points nil)
     (robot-pos nil :type (or nil pos))
     (cur-score 0 :type fixnum)

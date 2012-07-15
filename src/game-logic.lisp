@@ -2,7 +2,7 @@
 (defvar *lift-exit-bonus* 50)
 (defvar *abort-exit-bonus* 25)
 
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 ;;(defvar *got-timeout-signal* nil)
 
@@ -41,18 +41,6 @@
 (defun distance (a b)
 	(+ (abs (- (pos-x a) (pos-x b)))
 	   (abs (- (pos-y a) (pos-y b)))))
-
-(defun find-nearest-lambda (state lambdas)
-	(let ((rp (gs-robot-pos state))
-		  (nearest-dist nil)
-		  (nearest nil))
-		(dolist (p lambdas)
-			(let ((p-dist (distance p rp)))
-				(when (or (null nearest-dist)
-					  	  (< p-dist nearest-dist))
-					(setf nearest-dist p-dist
-						  nearest p))))
-		nearest))
 
 ;; TODO: some normalization here
 (defun control-points-estimation (state)
