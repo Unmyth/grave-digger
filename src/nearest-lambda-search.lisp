@@ -31,6 +31,8 @@
 (defun distance-penalty (state path)
     (* 2 (distance-from-path (gs-robot-pos state) path)))
 
+(defvar *border-iters-num* 10000)
+
 (defun nearest-lambda-iteration (state lambdas)
 	(format t "nearest-lambda-iteration on state: ~A" state)
     (if lambdas
@@ -40,12 +42,15 @@
                     ;; todo: check that lambda still exists
                     (let* ((rest-of-lambdas (remove target lambdas))
                            (path (wave-path wave target))
+                           (iters-num 0)
                            (target-state
                              (do-search
                                 state
-                                :termination-fn (lambda (s) (equalp (gs-robot-pos s) target))
-                                :estimation-fn (lambda (s) (+ (max-possible-estimation s)
-                                                              (distance-penalty s path)))
+                                :termination-fn (lambda (s) (or (equalp (gs-robot-pos s) target)
+                                                                (> iters-num *border-iters-num*)))
+                                :estimation-fn (lambda (s)  (incf iters-num)
+                                                            (+ (max-possible-estimation s)
+                                                               (distance-penalty s path)))
                                 :continuations-fn #'produce-continuations ;;TODO remove states too far from path here
                                )))
                         (when target-state
