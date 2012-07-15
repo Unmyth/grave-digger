@@ -53,7 +53,7 @@
                     (return-from do-search current)
                     (generic-map-add closed-states current))
 
-                (when (= (mod *iters-count* 50) 0)
+                (when (= (mod *iters-count* 500) 0)
                      (format t "On iteration ~A, state is ~A~%" *iters-count* current))
                 
 
