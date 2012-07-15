@@ -2,7 +2,7 @@
 (defvar *lift-exit-bonus* 50)
 (defvar *abort-exit-bonus* 25)
 
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 ;;(defvar *got-timeout-signal* nil)
 

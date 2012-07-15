@@ -1,9 +1,27 @@
+(declaim (special *map-metadata*))
+
+(defmacro read-meta-value (var sym)
+  (let ((val (gensym)))
+    `(let ((,val (assoc ',sym *map-metadata*)))
+       (when ,val
+         (setf ,var (second ,val))))))
+
+(defun interpret-metadata ()
+  (read-meta-value *map-water-level* water)
+  (read-meta-value *map-flooding* flooding)
+  (read-meta-value *map-waterproof* waterproof))
+
 (defun read-initial-state ()
     (multiple-value-bind (field rob-pos) (map-from-stdio)
-        (make-game-state 
-            :field field
-            :need-to-be-updated (init-need-to-be-updated field)
-            :robot-pos rob-pos)))
+      (interpret-metadata)
+      (make-game-state 
+       :field field
+       :need-to-be-updated (init-need-to-be-updated field)
+       :robot-pos rob-pos
+
+       :water-level (+ *map-water-level* 1)
+       :flooding-counter *map-flooding*
+       :cur-waterproof *map-waterproof*)))
 
 
 (defun main-manual ()

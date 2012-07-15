@@ -1,4 +1,4 @@
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defvar *total-lambdas*)
 
@@ -47,52 +47,63 @@
     (if (eq sym 'error)
         (read-command g-s)
       (let ((new-state (update-game-state g-s sym)))
-        (format t "~A~%Score: ~A~%Robot at ~A~%Path: ~A~% Lambdas ~A/~A~%"
+        (format t "~A~%Score: ~A~%Robot at ~A~%Path: ~A~% Lambdas ~A/~A~%Water level:~A~%"
                 (map-to-string (gs-field new-state)) 
                 (gs-cur-score new-state)
                 (gs-robot-pos new-state)
                 (make-path-string new-state)
                 (gs-cur-lambdas new-state)
                 *total-lambdas*
+                (- (gs-water-level g-s) 2)
                 )
+        ;;(print new-state)
         (if (eq (gs-state new-state) 'in-progress)
-            (read-command new-state))))))
+            (read-command new-state)
+            (progn 
+              (format t "Result : ~A~%" (gs-state new-state))
+              (format t "Final score : ~A~%" (gs-cur-score new-state))))))))
+
+(defvar *map-metadata* nil)
 
 (defun map-from-stdio ()
-  (let* ((file (second *posix-argv*))
-         (str-lst
-           (with-open-file (*standard-input* file)
-             (loop for line = (read-line *standard-input* nil nil)
+  (with-open-file (*standard-input* (second *posix-argv*))
+    (let* ((str-lst
+            (loop for line = (read-line *standard-input* nil nil)
+               while (and line (not (string= line "")))
+               collect line))
+           (h (length str-lst))
+           (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
+           (smap (create-tree-map (+ w 4) (+ h 4)))
+           (i 2)
+           (j 2)
+           (rob-pos nil))
+      ;;Read metadata
+      (loop for line = (read-line *standard-input* nil nil)
                while line
-               collect line)))
-         (h (length str-lst))
-         (w (reduce (lambda (a x) (if (> (length x) a) (length x) a)) str-lst :initial-value 0))
-         (smap (create-tree-map (+ w 4) (+ h 4)))
-         (i 2)
-         (j 2)
-         (rob-pos nil))
-    (loop for x from 0 to (1+ w) do
-          (update! smap x 0 'wall)
-          (update! smap x 1 'wall)
-          (update! smap x (+ 2 h) 'wall)
-          (update! smap x (1+ h) 'wall))
-    (loop for y from 0 to (1+ h) do
-          (update! smap 0 y 'wall)
-          (update! smap 1 y 'wall)
-          (update! smap (+ 2 w) y 'wall)
-          (update! smap (1+ w) y 'wall))
-    (loop for str in (reverse str-lst) do
-          (setf j 2)
-          (mapcar
+               do (push (read-from-string (concatenate 'string "( " line " )"))
+                        *map-metadata*))
+      (loop for x from 0 to (1+ w) do
+           (update! smap x 0 'wall)
+           (update! smap x 1 'wall)
+           (update! smap x (+ 2 h) 'wall)
+           (update! smap x (1+ h) 'wall))
+      (loop for y from 0 to (1+ h) do
+           (update! smap 0 y 'wall)
+           (update! smap 1 y 'wall)
+           (update! smap (+ 2 w) y 'wall)
+           (update! smap (1+ w) y 'wall))
+      (loop for str in (reverse str-lst) do
+           (setf j 2)
+           (mapcar
             (lambda (chr)
               (let ((sym (char-to-symbol chr)))
                 (if (eq sym 'robot) (setf rob-pos (make-pos :x j :y i)))
                 (update! smap j i sym)
                 (setf j (1+ j))))
             (coerce str 'list))
-          (setf i (1+ i)))
-    (count-lambdas smap)
-    (values smap rob-pos)))
+           (setf i (1+ i)))
+      (count-lambdas smap)
+      (values smap rob-pos))))
 
 (defun map-to-string (mp)
   (let ((h (map-height mp))
@@ -119,7 +130,8 @@
   (cond ((eq command 'w)
          (values old-map robot-pos (1- cur-score) cur-lamdas 'in-progress))
         ((eq command 'a)
-         (values old-map robot-pos (+ cur-score (* 25 cur-lamdas)) cur-lamdas 'aborted))
+         (values old-map robot-pos (+ cur-score (* 25 cur-lamdas))
+                 cur-lamdas 'aborted))
         (t (let ((new-x (case command
                           (l (1- (pos-x robot-pos)))
                           (r (1+ (pos-x robot-pos)))
@@ -269,7 +281,9 @@
               (1+ (pos-y robot-pos)))
       'falling-rock))
 
-
+(defun is-under-water (water-level robot-pos)
+  (<= (pos-y robot-pos)
+      water-level))
 
 (defun update-game-state (gs command)
   (let ((old-need-to-be-updated (heap-copy (gs-need-to-be-updated gs))))
@@ -294,22 +308,31 @@
       (multiple-value-bind  (new-map-2 new-need-to-be-updated)
           (quick-update-map new-map old-need-to-be-updated (= new-lambdas *total-lambdas*))
         (let* (;;(alternative-state (update-map new-map old-need-to-be-updated (= new-lambdas *total-lambdas*)))
-               (new-state (if (have-lost new-map-2 new-robot-pos)
-               ;;(new-state (if (have-lost alternative-state new-robot-pos)
+               (new-water-level (if (= (gs-flooding-counter gs) 1)
+                                    (1+ (gs-water-level gs))
+                                    (gs-water-level gs)))
+               (new-waterproof (if (is-under-water new-water-level new-robot-pos)
+                                   (1- (gs-cur-waterproof gs))
+                                   *map-waterproof*))
+               (new-state (if (or (have-lost new-map-2 new-robot-pos)
+                                  (< new-waterproof 0))
+                              ;;(new-state (if (have-lost alternative-state new-robot-pos)
                               'lost
-                              after-move-state)))
-                          ;; (unless (tree-map-equals new-map-2 alternative-state)
-                          ;;   (format t "1==~A~%" new-map-2)
-                          ;;   (format t "2==~A~%" alternative-state)
-                          ;;   (format t "heap=~A%" old-need-to-be-updated)
-                          ;;   (error "Wrong update"))
+                              after-move-state))
+               (new-flooding-counter (if (<= (gs-flooding-counter gs) 1)
+                                         *map-flooding*
+                                         (1- (gs-flooding-counter gs)))))
           (make-game-state :field new-map-2;;alternative-state
                            :robot-pos new-robot-pos
                            :cur-score new-score
                            :cur-lambdas new-lambdas
                            :state new-state
                            :need-to-be-updated new-need-to-be-updated
-                           :path (cons command (gs-path gs))))))))
+                           :path (cons command (gs-path gs))
+                           
+                           :water-level new-water-level
+                           :cur-waterproof new-waterproof
+                           :flooding-counter new-flooding-counter))))))
 
 
 (defmethod print-object ((obj tree-map) stream)

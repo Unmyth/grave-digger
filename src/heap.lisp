@@ -20,7 +20,7 @@
 ;;; Free Software Foundation, Inc., 59 Temple Place, Suite 330,
 ;;; Boston, MA 02111-1307 USA
 ;;;
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defstruct heap
   less-fn

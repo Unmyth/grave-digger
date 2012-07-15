@@ -1,4 +1,4 @@
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defun distance (a b)
 	(+ (abs (- (pos-x a) (pos-x b)))

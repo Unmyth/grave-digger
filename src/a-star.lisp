@@ -1,10 +1,18 @@
-(declaim (optimize (speed 3) (safety 0) (debug 0)))
+;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
 (defun game-state-hash (gs)
-    (tree-map-hash (gs-field gs)))
+    (mod 
+     (+ (tree-map-hash (gs-field gs))
+        (* (gs-water-level gs) 2191)
+        (* (gs-flooding-counter gs) 123)
+        (* (gs-cur-waterproof gs) 7))
+     +big-prime+))
 
 (defun game-state-eq (a b)
-    (tree-map-equals (gs-field a) (gs-field b)))
+    (and (tree-map-equals (gs-field a) (gs-field b))
+         (= (gs-water-level a) (gs-water-level b))
+         (= (gs-flooding-counter a) (gs-flooding-counter b))
+         (= (gs-cur-waterproof a) (gs-cur-waterproof b))))
 
 (defvar *iters-count* 0)
 
