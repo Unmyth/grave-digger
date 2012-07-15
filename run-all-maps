@@ -1,0 +1,22 @@
+#!/bin/sh
+
+prog=$1
+timeout=$2
+
+score=0
+
+rm -rf maps/*.score
+
+for map in maps/*.map
+do
+    echo "Map : " $map
+    ./run-map $prog $map $timeout 
+done
+
+for sc in maps/*.score
+do
+    scval=`cat $sc`
+    score=$((score+scval))
+done
+
+echo "Total score " $score
