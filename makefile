@@ -13,5 +13,14 @@ clean:
 	touch src/*.lisp
 	rm -rf lifter lifter-interactive lifter-n
 
-.PHONY: lifter lifter-interactive lifter-n clean
+PACKAGE_FILES=install PACKAGES-TESTING src/*.lisp src/*.system README makefile
+PACKAGE_CMD=tar -czf icfp-95466816.tgz 
+
+src-package:
+	$(PACKAGE_CMD) $(PACKAGE_FILES)
+
+package: lifter
+	$(PACKAGE_CMD) $(PACKAGE_FILES) lifter
+
+.PHONY: lifter lifter-interactive lifter-n clean package
 
