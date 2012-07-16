@@ -31,7 +31,8 @@
                (or (null *best-state*)
                    (> (gs-cur-score state) (gs-cur-score *best-state*))))
         (setf *best-state* state))
-    (is-winning-state? state))
+    ;;(is-winning-state? state)
+    nil)
 
 (defun produce-continuations (state)
     (unless (is-terminal-state? state) ;; states with 'a in the end do not produce continuations

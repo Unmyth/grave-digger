@@ -76,7 +76,9 @@
                        continuations-fn)
     (let ((closed-states     (make-closed-state-table))
           (open-states       (create-heap (lambda (a b) (< (gs-estimation a) (gs-estimation b)))))
-          (visited-positions (make-hash-table :test #'equalp)))
+          (visited-positions (make-hash-table :test #'equalp))
+          (map-w (map-width (gs-field state)))
+          (map-h (map-height (gs-field state))))
         
         ;; initiate the loop 
         (setf (gs-estimation state) (funcall estimation-fn state visited-positions))
@@ -91,9 +93,11 @@
             (when (heap-empty-p open-states)
                 (return-from do-search nil))
 
-            (when (>= (+ (generic-map-size closed-states)
-                         (heap-count open-states))
-                      500000)
+            (when (>= (* (+ (generic-map-size closed-states)
+                            (heap-count open-states))
+                         map-w
+                         map-h)
+                      100000000)
               (return-from do-search nil))
 
             (let ((current (heap-remove open-states)))

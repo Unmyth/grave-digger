@@ -86,6 +86,13 @@
 
 (defun main-game () (main #'play-a-game))
 
+(defun main-smart () (main (lambda (state)
+                             (if (>= (* (map-width (gs-field state))
+                                        (map-height (gs-field state)))
+                                     90)
+                                 (play-with-nearest-lambdas state)
+                                 (play-a-game state)))))
+
 (defun install-handler ()
   (sb-sys:enable-interrupt
    sb-posix:sigint
