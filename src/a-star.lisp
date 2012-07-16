@@ -113,7 +113,8 @@
                               (incf (gethash (gs-robot-pos current) visited-positions))
                               (setf (gethash (gs-robot-pos current) visited-positions) 1)))))
 
-                (when (= (mod *iters-count* 500) 0)
+                (when (and (second *posix-argv*)
+                           (= (mod *iters-count* 500) 0))
                      (format t "On iteration ~A, state is ~A~%" *iters-count* current))
                 
 

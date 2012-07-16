@@ -89,7 +89,7 @@
 (defvar *map-metadata* nil)
 
 (defun map-from-stdio ()
-  (with-open-file (*standard-input* (second *posix-argv*))
+  ;;(with-open-file (*standard-input* (second *posix-argv*))
     (let* ((str-lst
             (loop for line = (read-line *standard-input* nil nil)
                while (and line (not (string= line "")))
@@ -126,7 +126,7 @@
             (coerce str 'list))
            (setf i (1+ i)))
       (count-lambdas smap)
-      (values smap rob-pos))))
+      (values smap rob-pos)));;)
 
 (defun map-to-string (mp)
   (let ((h (map-height mp))
@@ -277,7 +277,7 @@
                      ((space robot) 'falling-rock)
                      (otherwise 'rock)))
     ((hor
-      falling-rock) (case below
+      falling-hor) (case below
                      ((space robot) 'falling-hor)
                      (otherwise 'lambda)))))
 

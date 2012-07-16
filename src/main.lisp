@@ -89,7 +89,7 @@
 (defun main-smart () (main (lambda (state)
                              (if (>= (* (map-width (gs-field state))
                                         (map-height (gs-field state)))
-                                     90)
+                                     130)
                                  (play-with-nearest-lambdas state)
                                  (play-a-game state)))))
 

@@ -4,5 +4,5 @@ prog=$1
 map=$2
 timeout=$3
 
-timeout ${timeout}s ./$prog $map > ${map}.out
+cat $map | timeout -s 2 ${timeout}s ./$prog > ${map}.out
 grep 'Final score' ${map}.out | uniq | sed 's@Final score:@@' > ${map}.score
