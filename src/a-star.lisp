@@ -1,5 +1,7 @@
 ;;(declaim (optimize (speed 3) (safety 0) (debug 0)))
 
+(defun need-debug-output? () (second *posix-argv*))
+
 (defun game-state-hash (gs)
     (mod 
      (+ (tree-map-hash (gs-field gs))
@@ -113,7 +115,7 @@
                               (incf (gethash (gs-robot-pos current) visited-positions))
                               (setf (gethash (gs-robot-pos current) visited-positions) 1)))))
 
-                (when (and (second *posix-argv*)
+                (when (and (need-debug-output?)
                            (= (mod *iters-count* 500) 0))
                      (format t "On iteration ~A, state is ~A~%" *iters-count* current))
                 

@@ -73,10 +73,12 @@
     (install-handler)
     (funcall fn state)
     (let ((final-state (or *best-state* state)))
+     (if (need-debug-output?) 
       (format t "Final path: ~A~%Final state: ~A~%Final score:~A~%"
               (make-path-string final-state)
               final-state
-              (compute-state-score final-state)))))
+              (compute-state-score final-state))
+      (format t "~A~%"  (make-path-string final-state))))))
 
 
 (defun main-manual ()
